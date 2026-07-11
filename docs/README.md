@@ -27,7 +27,7 @@ See [benchmark README](../example_data/benchmark/README.md) for how 1M+ employee
 ## Commands
 
 ```bash
-cargo test -p swift_payroll          # integration + unit tests
+cargo test -p swift_payroll_engine          # integration + unit tests
 just run-tests                       # same, with --nocapture
 just bench                           # Criterion throughput suite
 just bench-once [N]                  # one-shot bench (default N = 1_500_000)

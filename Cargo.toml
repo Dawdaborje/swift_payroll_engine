@@ -3,7 +3,7 @@ resolver = "2"
 members = [
     "crates/sp_dsl",
     "crates/sp_engine",
-    "swift_payroll",
+    "swift_payroll_engine",
     "crates/spe_integrator",
 ]
 

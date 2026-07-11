@@ -1,5 +1,5 @@
 use clap::Parser;
-use swift_payroll::cli;
+use swift_payroll_engine::cli;
 
 fn main() {
     let args = cli::args::CliArgs::parse();

@@ -1,5 +1,5 @@
 [package]
-name = "swift_payroll"
+name = "swift_payroll_engine"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -28,4 +28,3 @@ criterion = { version = "0.5", features = ["html_reports"] }
 [[bench]]
 name = "payroll_throughput"
 harness = false
-

@@ -130,5 +130,5 @@ Amounts are compared as `Decimal` values after engine rounding (2 decimal places
 Run:
 
 ```bash
-cargo run -p swift_payroll --bin swift_payroll --release -- --input path/to/employees.json
+cargo run -p swift_payroll_engine --bin swift_payroll_engine --release -- --input path/to/employees.json
 ```

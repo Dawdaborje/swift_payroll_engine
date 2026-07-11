@@ -6,7 +6,7 @@ Swift Payroll Engine is a Cargo workspace with three main crates:
 
 ```text
 ┌─────────────────────────────────────────────────────────┐
-│  swift_payroll                                          │
+│  swift_payroll_engine                                          │
 │  CLI · fixture loading · cohort expansion · tests/bench │
 └──────────────────────────┬──────────────────────────────┘
                            │
@@ -34,7 +34,7 @@ Rounding: gross, each deduction, and net are rounded to **2 decimal places** (`M
 ```rust
 use sp_engine::calculator::CalculationContext;
 use sp_engine::models::emp_context::EmployeeContext;
-// build EmployeeContext values (or use swift_payroll::fixture helpers)
+// build EmployeeContext values (or use swift_payroll_engine::fixture helpers)
 
 let ctx = CalculationContext { emp_contexts: employees };
 let results = ctx.calculate()?;           // parallel
@@ -47,7 +47,7 @@ For large synthetic cohorts without materializing a full `Vec<EmployeeContext>`:
 CalculationContext::calculate_stream_count(n, |i| cohort.employee_at(i))?;
 ```
 
-See `swift_payroll::cohort::ProfileCohort` and `expand_profiles`.
+See `swift_payroll_engine::cohort::ProfileCohort` and `expand_profiles`.
 
 ## Rule engines
 
@@ -93,19 +93,19 @@ Fixtures: `example_data/{basic,intermediate,advanced}/`. Each test file is a JSO
 **Policy:** integration tests stay at **≤500 employees**. Million-scale throughput is measured by Criterion / `bench_once`, not unit tests.
 
 ```bash
-cargo test -p swift_payroll
+cargo test -p swift_payroll_engine
 just run-tests
 just bench
 just bench-once
 just bench-once 1000
 ```
 
-Benchmark inputs: `example_data/benchmark/profiles.json` (tier templates with 10–100 tax rules) expanded by `swift_payroll::cohort::expand_profiles` and `ProfileCohort::employee_at`. Details: [benchmark README](../../example_data/benchmark/README.md).
+Benchmark inputs: `example_data/benchmark/profiles.json` (tier templates with 10–100 tax rules) expanded by `swift_payroll_engine::cohort::expand_profiles` and `ProfileCohort::employee_at`. Details: [benchmark README](../../example_data/benchmark/README.md).
 
 ## CLI
 
 ```bash
-cargo run -p swift_payroll --bin swift_payroll --release -- --input example_data/basic/001_basic.json
+cargo run -p swift_payroll_engine --bin swift_payroll_engine --release -- --input example_data/basic/001_basic.json
 ```
 
 | Flag | Description |
@@ -132,12 +132,12 @@ Same adapter pattern: a Frappe app or REST client maps Salary Structure / Salary
 
 ## Python bindings (PyO3)
 
-Planned crate: `bindings/swift_payroll_py` as a `cdylib` built with [maturin](https://github.com/PyO3/maturin).
+Planned crate: `bindings/swift_payroll_engine_py` as a `cdylib` built with [maturin](https://github.com/PyO3/maturin).
 
 Target API:
 
 ```python
-results = swift_payroll.calculate(employees: list[dict]) -> list[dict]
+results = swift_payroll_engine.calculate(employees: list[dict]) -> list[dict]
 ```
 
 - Python `>=3.9`
@@ -147,7 +147,7 @@ Scaffolding exists under `bindings/`; the native extension is **not implemented*
 
 ## JavaScript / TypeScript
 
-**Short-term (planned):** HTTP API (`POST /v1/calculate`) in `swift_payroll` (`server.rs` / `--serve`) so any JS client can post the same JSON as fixtures.
+**Short-term (planned):** HTTP API (`POST /v1/calculate`) in `swift_payroll_engine` (`server.rs` / `--serve`) so any JS client can post the same JSON as fixtures.
 
 **Later:** `napi-rs` Node addon or `wasm-pack` for browser/edge, reusing the same JSON shapes.
 

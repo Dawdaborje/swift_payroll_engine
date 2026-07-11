@@ -10,7 +10,7 @@
 One million employees are generated on the fly from `profiles.json` via `ProfileCohort` and calculated with `CalculationContext::calculate_stream_count` (no full cohort or result vectors).
 
 ```bash
-cargo bench -p swift_payroll --bench payroll_throughput
+cargo bench -p swift_payroll_engine --bench payroll_throughput
 just bench
 just bench-once
 just bench-once 1000

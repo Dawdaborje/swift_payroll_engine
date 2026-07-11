@@ -3,8 +3,8 @@ use std::time::Instant;
 
 use sp_dsl::RuleCache;
 use sp_engine::calculator::CalculationContext;
-use swift_payroll::cohort::ProfileCohort;
-use swift_payroll::fixture::{example_data_root, load_employees};
+use swift_payroll_engine::cohort::ProfileCohort;
+use swift_payroll_engine::fixture::{example_data_root, load_employees};
 
 fn main() {
     let n: usize = env::args()

@@ -2,8 +2,8 @@ use std::time::Duration;
 
 use criterion::{BenchmarkId, Criterion, Throughput, criterion_group, criterion_main};
 use sp_engine::calculator::CalculationContext;
-use swift_payroll::cohort::ProfileCohort;
-use swift_payroll::fixture::{example_data_root, load_employees};
+use swift_payroll_engine::cohort::ProfileCohort;
+use swift_payroll_engine::fixture::{example_data_root, load_employees};
 
 fn payroll_throughput(c: &mut Criterion) {
     let path = example_data_root().join("benchmark/profiles.json");

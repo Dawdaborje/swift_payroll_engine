@@ -16,12 +16,12 @@ A high-performance, framework-agnostic payroll computation engine written in Rus
 
 ```bash
 # Run integration tests (basic, intermediate, advanced, stress)
-cargo test -p swift_payroll
+cargo test -p swift_payroll_engine
 # or
 just run-tests
 
 # Calculate payroll from a fixture file
-cargo run -p swift_payroll --bin swift_payroll --release -- \
+cargo run -p swift_payroll_engine --bin swift_payroll_engine --release -- \
   --input example_data/basic/001_basic.json
 
 # Benchmarks
@@ -37,7 +37,7 @@ swift_payroll_engine/
 ├── crates/
 │   ├── sp_dsl/          # Rule DSL: CEL + Rhai compilation and evaluation
 │   └── sp_engine/       # Gross / deduction / net calculation
-├── swift_payroll/       # CLI, fixture loading, integration tests, benches
+├── swift_payroll_engine/       # CLI, fixture loading, integration tests, benches
 ├── example_data/        # Fixtures and benchmark profiles
 ├── bindings/            # Python bindings scaffolding (PyO3 / maturin)
 └── docs/                # Documentation
