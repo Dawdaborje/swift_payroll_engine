@@ -23,7 +23,7 @@
         "id": "SSHFC",
         "label": "Social Security (SSHFC)",
         "type": "tax",
-        "engine": "cel",
+        "engine": "rhai",
         "expression": "gross * 0.05"
       },
       {
@@ -44,7 +44,29 @@
     "pay_period": "2024-06",
     "currency": "GMD",
     "payment_method": "bank_transfer",
-    "bank_account": "GT-001-0023456"
+    "bank_account": "GT-001-0023456",
+    "results": {
+      "gross_salary": "22000.00",
+      "net_salary": "18000.00",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "2000.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "1100.00"
+        },
+        {
+          "id": "LOAN_001",
+          "amount": "800.00"
+        },
+        {
+          "id": "UNION",
+          "amount": "100.00"
+        }
+      ]
+    }
   },
   {
     "employee_id": "EMP-2024-002",
@@ -70,7 +92,7 @@
         "id": "SSHFC",
         "label": "Social Security (SSHFC)",
         "type": "tax",
-        "engine": "cel",
+        "engine": "rhai",
         "expression": "gross * 0.05"
       },
       {
@@ -84,7 +106,25 @@
     "pay_period": "2024-06",
     "currency": "GMD",
     "payment_method": "bank_transfer",
-    "bank_account": "GT-002-0098712"
+    "bank_account": "GT-002-0098712",
+    "results": {
+      "gross_salary": "42750.00",
+      "net_salary": "33000.00",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "7462.50"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "2137.50"
+        },
+        {
+          "id": "UNION",
+          "amount": "150.00"
+        }
+      ]
+    }
   },
   {
     "employee_id": "EMP-2024-003",
@@ -110,7 +150,7 @@
         "id": "SSHFC",
         "label": "Social Security (SSHFC)",
         "type": "tax",
-        "engine": "cel",
+        "engine": "rhai",
         "expression": "gross * 0.05"
       },
       {
@@ -124,7 +164,25 @@
     "pay_period": "2024-06",
     "currency": "GMD",
     "payment_method": "mobile_money",
-    "bank_account": null
+    "bank_account": null,
+    "results": {
+      "gross_salary": "8750.00",
+      "net_salary": "8112.50",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "0.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "437.50"
+        },
+        {
+          "id": "LOAN_001",
+          "amount": "200.00"
+        }
+      ]
+    }
   },
   {
     "employee_id": "EMP-2024-004",
@@ -150,7 +208,7 @@
         "id": "SSHFC",
         "label": "Social Security (SSHFC)",
         "type": "tax",
-        "engine": "cel",
+        "engine": "rhai",
         "expression": "gross * 0.05"
       },
       {
@@ -164,7 +222,25 @@
     "pay_period": "2024-06",
     "currency": "GMD",
     "payment_method": "bank_transfer",
-    "bank_account": "GT-003-0045678"
+    "bank_account": "GT-003-0045678",
+    "results": {
+      "gross_salary": "67000.00",
+      "net_salary": "45350.00",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "16300.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "3350.00"
+        },
+        {
+          "id": "LOAN_001",
+          "amount": "2000.00"
+        }
+      ]
+    }
   },
   {
     "employee_id": "EMP-2024-005",
@@ -190,7 +266,7 @@
         "id": "SSHFC",
         "label": "Social Security (SSHFC)",
         "type": "tax",
-        "engine": "cel",
+        "engine": "rhai",
         "expression": "gross * 0.05"
       },
       {
@@ -211,7 +287,29 @@
     "pay_period": "2024-06",
     "currency": "GMD",
     "payment_method": "bank_transfer",
-    "bank_account": "GT-004-0067890"
+    "bank_account": "GT-004-0067890",
+    "results": {
+      "gross_salary": "14900.00",
+      "net_salary": "12845.00",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "735.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "745.00"
+        },
+        {
+          "id": "LOAN_001",
+          "amount": "500.00"
+        },
+        {
+          "id": "UNION",
+          "amount": "75.00"
+        }
+      ]
+    }
   },
   {
     "employee_id": "EMP-2024-006",
@@ -237,7 +335,7 @@
         "id": "SSHFC",
         "label": "Social Security (SSHFC)",
         "type": "tax",
-        "engine": "cel",
+        "engine": "rhai",
         "expression": "gross * 0.05"
       },
       {
@@ -251,7 +349,25 @@
     "pay_period": "2024-06",
     "currency": "GMD",
     "payment_method": "mobile_money",
-    "bank_account": null
+    "bank_account": null,
+    "results": {
+      "gross_salary": "10600.00",
+      "net_salary": "9930.00",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "90.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "530.00"
+        },
+        {
+          "id": "UNION",
+          "amount": "50.00"
+        }
+      ]
+    }
   },
   {
     "employee_id": "EMP-2024-007",
@@ -277,7 +393,7 @@
         "id": "SSHFC",
         "label": "Social Security (SSHFC)",
         "type": "tax",
-        "engine": "cel",
+        "engine": "rhai",
         "expression": "gross * 0.05"
       },
       {
@@ -291,7 +407,25 @@
     "pay_period": "2024-06",
     "currency": "GMD",
     "payment_method": "bank_transfer",
-    "bank_account": "GT-005-0089012"
+    "bank_account": "GT-005-0089012",
+    "results": {
+      "gross_salary": "92500.00",
+      "net_salary": "56375.00",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "26500.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "4625.00"
+        },
+        {
+          "id": "LOAN_001",
+          "amount": "5000.00"
+        }
+      ]
+    }
   },
   {
     "employee_id": "EMP-2024-008",
@@ -317,7 +451,7 @@
         "id": "SSHFC",
         "label": "Social Security (SSHFC)",
         "type": "tax",
-        "engine": "cel",
+        "engine": "rhai",
         "expression": "gross * 0.05"
       },
       {
@@ -338,7 +472,29 @@
     "pay_period": "2024-06",
     "currency": "GMD",
     "payment_method": "bank_transfer",
-    "bank_account": "GT-006-0012345"
+    "bank_account": "GT-006-0012345",
+    "results": {
+      "gross_salary": "27400.00",
+      "net_salary": "21580.00",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "3350.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "1370.00"
+        },
+        {
+          "id": "LOAN_001",
+          "amount": "1000.00"
+        },
+        {
+          "id": "UNION",
+          "amount": "100.00"
+        }
+      ]
+    }
   },
   {
     "employee_id": "EMP-2024-009",
@@ -364,14 +520,28 @@
         "id": "SSHFC",
         "label": "Social Security (SSHFC)",
         "type": "tax",
-        "engine": "cel",
+        "engine": "rhai",
         "expression": "gross * 0.05"
       }
     ],
     "pay_period": "2024-06",
     "currency": "GMD",
     "payment_method": "mobile_money",
-    "bank_account": null
+    "bank_account": null,
+    "results": {
+      "gross_salary": "5950.00",
+      "net_salary": "5652.50",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "0.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "297.50"
+        }
+      ]
+    }
   },
   {
     "employee_id": "EMP-2024-010",
@@ -397,7 +567,7 @@
         "id": "SSHFC",
         "label": "Social Security (SSHFC)",
         "type": "tax",
-        "engine": "cel",
+        "engine": "rhai",
         "expression": "gross * 0.05"
       },
       {
@@ -418,6 +588,28 @@
     "pay_period": "2024-06",
     "currency": "GMD",
     "payment_method": "bank_transfer",
-    "bank_account": "GT-007-0078901"
+    "bank_account": "GT-007-0078901",
+    "results": {
+      "gross_salary": "54300.00",
+      "net_salary": "38380.00",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "11505.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "2715.00"
+        },
+        {
+          "id": "LOAN_001",
+          "amount": "1500.00"
+        },
+        {
+          "id": "UNION",
+          "amount": "200.00"
+        }
+      ]
+    }
   }
 ]

@@ -56,27 +56,21 @@ impl DslEngineImple for CelEngine {
                             value: Decimal::from_f64(f_value),
                         }
                     }
-                    Err(e) => {
-                        println!("CEL evaluation error for '{}': {:?}", self.name, e);
-                        super::DslEngineResult {
-                            success: false,
-                            message: None,
-                            error: Some(format!("CEL evaluation error: {e}")),
-                            name: self.name.clone(),
-                            value: None,
-                        }
+                    Err(e) => super::DslEngineResult {
+                        success: false,
+                        message: None,
+                        error: Some(format!("CEL evaluation error: {e}")),
+                        name: self.name.clone(),
+                        value: None,
                     },
                 }
             }
-            Err(e) => {
-                println!("CEL parse error for '{}': {:?}", self.name, e);
-                super::DslEngineResult {
-                    success: false,
-                    message: None,
-                    error: Some(format!("CEL parse error: {e}")),
-                    name: self.name.clone(),
-                    value: None,
-                }
+            Err(e) => super::DslEngineResult {
+                success: false,
+                message: None,
+                error: Some(format!("CEL parse error: {e}")),
+                name: self.name.clone(),
+                value: None,
             },
         }
     }

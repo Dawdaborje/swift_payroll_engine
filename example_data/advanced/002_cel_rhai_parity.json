@@ -1,0 +1,110 @@
+[
+  {
+    "employee_id": "EMP-PARITY-CEL",
+    "full_name": "Parity CEL Worker",
+    "contract_type": "full_time",
+    "base_salary": 30000.0,
+    "allowances": {
+      "transport": 2000.0,
+      "housing": 4000.0,
+      "meal": 500.0
+    },
+    "deductions": [
+      {
+        "id": "PAYE",
+        "label": "Income Tax (PAYE)",
+        "type": "tax",
+        "engine": "cel",
+        "expression": "gross <= 10000.0 ? 0.0 : gross <= 20000.0 ? (gross - 10000.0) * 0.15 : (10000.0 * 0.15) + (gross - 20000.0) * 0.25"
+      },
+      {
+        "id": "SSHFC",
+        "label": "Social Security (SSHFC)",
+        "type": "tax",
+        "engine": "cel",
+        "expression": "gross * 0.05"
+      },
+      {
+        "id": "PENSION",
+        "label": "Pension Contribution",
+        "type": "tax",
+        "engine": "cel",
+        "expression": "gross > 50000.0 ? gross * 0.08 : gross * 0.05"
+      }
+    ],
+    "pay_period": "2024-08",
+    "currency": "GMD",
+    "results": {
+      "gross_salary": "36500.00",
+      "net_salary": "27225.00",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "5625.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "1825.00"
+        },
+        {
+          "id": "PENSION",
+          "amount": "1825.00"
+        }
+      ]
+    }
+  },
+  {
+    "employee_id": "EMP-PARITY-RHAI",
+    "full_name": "Parity Rhai Worker",
+    "contract_type": "full_time",
+    "base_salary": 30000.0,
+    "allowances": {
+      "transport": 2000.0,
+      "housing": 4000.0,
+      "meal": 500.0
+    },
+    "deductions": [
+      {
+        "id": "PAYE",
+        "label": "Income Tax (PAYE)",
+        "type": "tax",
+        "engine": "rhai",
+        "expression": "if gross <= 10000.0 { 0.0 } else if gross <= 20000.0 { (gross - 10000.0) * 0.15 } else { (10000.0 * 0.15) + (gross - 20000.0) * 0.25 }"
+      },
+      {
+        "id": "SSHFC",
+        "label": "Social Security (SSHFC)",
+        "type": "tax",
+        "engine": "rhai",
+        "expression": "gross * 0.05"
+      },
+      {
+        "id": "PENSION",
+        "label": "Pension Contribution",
+        "type": "tax",
+        "engine": "rhai",
+        "expression": "if gross > 50000.0 { gross * 0.08 } else { gross * 0.05 }"
+      }
+    ],
+    "pay_period": "2024-08",
+    "currency": "GMD",
+    "results": {
+      "gross_salary": "36500.00",
+      "net_salary": "27225.00",
+      "deductions": [
+        {
+          "id": "PAYE",
+          "amount": "5625.00"
+        },
+        {
+          "id": "SSHFC",
+          "amount": "1825.00"
+        },
+        {
+          "id": "PENSION",
+          "amount": "1825.00"
+        }
+      ]
+    }
+  }
+]

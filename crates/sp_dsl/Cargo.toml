@@ -10,4 +10,5 @@ rhai = "1.25.1"
 rust_decimal = "1.42.1"
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
+once_cell = "1.21.3"
 true = "0.1.0"

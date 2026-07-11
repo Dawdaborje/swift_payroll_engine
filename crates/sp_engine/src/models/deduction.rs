@@ -1,11 +1,11 @@
-use sp_dsl::models::{DslType, PayrollRuleContext};
+use sp_dsl::models::{DslType, PayrollRuleContext, PayrollRuleError};
 use thiserror::Error;
 
 #[derive(Debug, Clone)]
 pub struct EmpDeduction {
     pub name: String,
     pub amount: rust_decimal::Decimal,
-    pub dsl_expr: Option<sp_dsl::models::PayrollRuleContext>,
+    pub dsl_expr: Option<PayrollRuleContext>,
 }
 
 #[derive(Debug, Error)]
@@ -14,6 +14,14 @@ pub enum EmpDeductionError {
     GeneralError,
     #[error("unsupported DSL type")]
     UnsupportedDsl,
+    #[error("DSL deduction is missing a non-empty expression")]
+    MissingExpression,
+    #[error("fixed deduction is missing an amount")]
+    MissingAmount,
+    #[error("unknown deduction engine: {0}")]
+    UnknownEngine(String),
+    #[error("failed to compile DSL rule: {0}")]
+    CompileRule(#[from] PayrollRuleError),
 }
 
 impl EmpDeduction {
@@ -23,15 +31,10 @@ impl EmpDeduction {
         dsl_code: String,
         dsl_type: DslType,
     ) -> Result<Self, EmpDeductionError> {
-        let payroll_rule = PayrollRuleContext {
-            rule_id: dsl_id,
-            rule_name: dsl_name.clone(),
-            dsl: dsl_code,
-            dsl_type,
-        };
+        let payroll_rule = PayrollRuleContext::new(dsl_id.clone(), dsl_name, dsl_code, dsl_type)?;
 
         Ok(Self {
-            name: dsl_name,
+            name: dsl_id,
             amount: rust_decimal::Decimal::new(0, 0),
             dsl_expr: Some(payroll_rule),
         })
