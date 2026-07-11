@@ -1,15 +1,26 @@
 # Bindings
 
-This directory contains the bindings for the Swift Payroll library.
+Language bindings for Swift Payroll Engine.
 
-## Python
+## Python (`bindings/swift_payroll_py`)
 
-The Python bindings are built using PyO3.
+**Status:** scaffolding only — native extension not implemented.
 
-### Building
+Planned stack:
 
-To build the Python bindings, run the following command:
+- [PyO3](https://pyo3.rs/) + [maturin](https://github.com/PyO3/maturin)
+- Target API: `calculate(employees: list[dict]) -> list[dict]`
+- Python `>=3.9`
+
+When implemented:
 
 ```bash
-cargo build --release --target x86_64-apple-darwin
+cd bindings/swift_payroll_py
+maturin develop --release
 ```
+
+The JSON input/output shape matches [docs/data-format.md](../docs/data-format.md).
+
+## JavaScript / TypeScript
+
+Planned via HTTP API (`POST /v1/calculate`) or later `napi-rs` / `wasm-pack`. See [technical docs](../docs/technical/README.md#javascript--typescript).

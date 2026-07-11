@@ -1,15 +1,31 @@
-# Swift Payroll DSL
+# sp_dsl
 
-This crate contains the DSL for the Swift Payroll library.
-The DSL crate is used to define tax rules and deductions.
+Rule compilation and evaluation for Swift Payroll Engine.
 
+## Supported engines
 
-## Supported DSL:
+| DSL | Status | Context |
+|-----|--------|---------|
+| **CEL** | Implemented | Variable `gross` (f64) |
+| **Rhai** | Implemented | Variable `gross` (f64) |
+| Odoo HRMS | Planned | `UnsupportedDsl` |
+| Frappe / ERPNext | Planned | `UnsupportedDsl` |
 
-- CEL: Common Expression Language.
-- Odoo: OpenERP/Odoo tax rules.
-- LUA: Lua scripting language for building tax rules and more.
-- Rhai: Rust scripting language for building tax rules and more.
-- Frappe/ERPNext: Frappe/ERPNext tax rules.
+## Usage
 
-This is in the first version and might not fully support all DSL features.
+```rust
+use sp_dsl::models::{DslType, PayrollRuleContext};
+
+let rule = PayrollRuleContext::new(
+    "PAYE".into(),
+    "Income Tax".into(),
+    "gross <= 10000 ? 0.0 : (gross - 10000) * 0.15".into(),
+    DslType::CEL,
+)?;
+
+let amount = rule.evaluate(gross_decimal)?;
+```
+
+Rules are compiled through `RuleCache::global()` and cached per OS thread on first evaluation.
+
+See [technical docs](../../docs/technical/README.md#rule-engines) for caching details.

@@ -1,3 +1,13 @@
-# Swift Payroll Python Bindings
+# Swift Payroll — Python bindings
 
-This directory contains the Python bindings for the Swift Payroll library.
+**Not implemented yet.** This directory holds maturin/PyO3 scaffolding for a future `swift_payroll` Python package.
+
+Planned usage:
+
+```python
+import swift_payroll
+
+results = swift_payroll.calculate(employees)  # list[dict] in, list[dict] out
+```
+
+Input schema: [docs/data-format.md](../../docs/data-format.md).

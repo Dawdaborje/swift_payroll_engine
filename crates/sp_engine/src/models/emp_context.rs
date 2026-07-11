@@ -83,7 +83,7 @@ impl EmployeeContext {
 
     pub fn build_deductions(
         &self,
-        dls_context: DlsContext,
+        _dls_context: DlsContext,
         rules: Vec<DeductionRule>,
     ) -> Result<Vec<ComputedDeduction>, DeductionError> {
         let mut deductions = Vec::new();
