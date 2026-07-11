@@ -4,6 +4,7 @@ members = [
     "crates/sp_dsl",
     "crates/sp_engine",
     "swift_payroll",
+    "crates/spe_integrator",
 ]
 
 [workspace.package]
