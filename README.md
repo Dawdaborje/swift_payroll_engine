@@ -1,77 +1,64 @@
 # Swift Payroll Engine
 
-A high-performance, framework-agnostic payroll computation engine written in Rust. It replaces slow, per-run expression evaluation with **compiled rule execution** and **parallel employee processing**, while keeping a simple JSON input/output contract that any HR system can adopt.
+A payroll calculation engine in Rust. A **salary structure** (earnings, deductions, employer contributions,
+working figures) goes in with a list of people; **payslips** come out, exact to the cent, the same every
+time.
 
-## Features
+* **Exact decimals.** Every amount is a decimal number; rates are read as written (`0.15` is fifteen
+  hundredths). Nothing goes through binary floating point, so `0.1 + 0.2` is `0.3` and a payslip can be
+  reproduced years later.
+* **Formulas in a small CEL-style language** (`crates/sp_expr`): conditions, `min`/`max`/`round`,
+  `pct`, `prorate`, and `bracket(x, table)` for progressive tax. No loops, no side effects.
+* **Components find their own order.** A formula names other components and adds up tagged groups with
+  `total("tag")`; the engine sorts them by what they need, and refuses a loop, an unknown name, or a typo
+  **before** any payroll runs.
+* **Strict inputs.** A missing input is an error, never zero; an unknown input is an error, never ignored.
+* **Explainable.** `--explain` shows, for each line, the formula and the names it read.
+* **Rule packs.** Tax and contribution rules live as data in [swift_tax_rules](../swift_tax_rules), each
+  with its source, a `verified` flag and its own tests, and plug into a structure.
+* **Parallel when you want it** (`parallel` feature, Rayon); off for WebAssembly.
 
-- **Compiled DSL rules** — CEL and Rhai expressions are parsed once at load time and cached per thread; invalid rules fail before payroll runs.
-- **Parallel calculation** — employees are processed with Rayon (`par_iter`); a sequential path exists for benchmarks.
-- **Decimal-safe money** — amounts use `rust_decimal` with banker's rounding to two decimal places.
-- **Golden fixture tests** — `example_data/` JSON files include expected `results` for regression testing.
-- **Throughput benchmarks** — Criterion suite and a `bench_once` binary scale to 1.5M+ employees without checking in huge JSON files.
-
-## Quick start
-
-**Requirements:** Rust 1.85+ (edition 2024), [just](https://github.com/casey/just) (optional).
+## Try it
 
 ```bash
-# Run integration tests (basic, intermediate, advanced, stress)
-cargo test -p swift_payroll_engine
-# or
-just run-tests
-
-# Calculate payroll from a fixture file
-cargo run -p swift_payroll_engine --bin swift_payroll_engine --release -- \
-  --input example_data/basic/001_basic.json
-
-# Benchmarks
-just bench              # Criterion suite (parallel + sequential baselines)
-just bench-once         # single run, default 1_500_000 employees
-just bench-once 10000   # smaller smoke run
+cargo test                                  # engine, expression language, rule packs
+cargo run -- --input example_data/demo_run.json --explain
+cargo run -- check-rules ../swift_tax_rules/countries
 ```
 
-## Project layout
+## Layout
 
 ```text
-swift_payroll_engine/
-├── crates/
-│   ├── sp_dsl/          # Rule DSL: CEL + Rhai compilation and evaluation
-│   └── sp_engine/       # Gross / deduction / net calculation
-├── swift_payroll_engine/       # CLI, fixture loading, integration tests, benches
-├── example_data/        # Fixtures and benchmark profiles
-├── bindings/            # Python bindings scaffolding (PyO3 / maturin)
-└── docs/                # Documentation
+crates/sp_expr/       the expression language (exact decimals, CEL syntax)
+crates/sp_engine/     structures, compiling, calculating, rule packs
+swift_payroll_engine/ command line
+example_data/         a worked run
+docs/                 the data format and the design
 ```
 
 ## Calculation model
 
-For each employee:
+For each person, the components run in dependency order. Each amount is rounded by its own rule (default
+two digits, half away from zero); then
 
-1. **Gross** = `base_salary` + sum of allowances
-2. **Deductions** — fixed amounts, or DSL expressions evaluated with `gross` in scope
-3. **Net** = gross − total deductions (rounded to 2 dp)
+```
+gross      = sum of earnings
+deductions = sum of deductions
+net        = gross - deductions          (a negative net is an error, held at zero, or allowed: the structure says)
+employer   = sum of employer contributions   (on top of pay, not in net)
+```
 
-Deduction engines: `fixed`, `cel`, `rhai`. See [Data format](./docs/data-format.md) for the JSON schema.
+`info` components are working figures (gross, taxable pay) shown on the payslip and added to nothing.
 
-## Documentation
+See [docs/data-format.md](./docs/data-format.md) and [docs/design.md](./docs/design.md).
 
-| Topic | Location |
-|-------|----------|
-| Docs index | [docs/README.md](./docs/README.md) |
-| Architecture, caching, integrations | [docs/technical/README.md](./docs/technical/README.md) |
-| JSON input schema | [docs/data-format.md](./docs/data-format.md) |
-| Benchmark data | [example_data/benchmark/README.md](./example_data/benchmark/README.md) |
+## What changed from 0.1
 
-## Status
-
-| Component | Status |
-|-----------|--------|
-| CEL + Rhai deduction rules | Implemented |
-| CLI (`--input`) | Implemented |
-| Parallel `CalculationContext` | Implemented |
-| HTTP API (`--serve`) | Planned (`server.rs` stub) |
-| Python bindings (PyO3) | Scaffolding only |
-| Odoo / ERPNext native DSL | Planned (use external adapters) |
+0.1 ran every rule with `f64` (and rewrote whole numbers in the expression text with a regex to make CEL
+accept them), let a rule see only `gross`, had no way for one deduction to use another, and did not build
+(two packages shared a name). 0.2 replaces the rule engines with the exact-decimal language, so Rhai rules
+are no longer accepted; the HTTP server and Python bindings of 0.1 were stubs and are gone until they are
+needed.
 
 ## License
 

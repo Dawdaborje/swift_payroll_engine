@@ -1,18 +1,20 @@
 [workspace]
 resolver = "2"
-members = [
-    "crates/sp_dsl",
-    "crates/sp_engine",
-    "swift_payroll_engine",
-    "crates/spe_integrator",
-]
+members = ["crates/sp_expr", "crates/sp_engine", "swift_payroll_engine"]
 
 [workspace.package]
-version = "0.1.0"
-edition = "2024"
+version = "0.2.0"
+edition = "2021"
 license = "MIT"
 
-
 [workspace.dependencies]
-sp_engine = { path = "./crates/sp_engine" }
-sp_dsl = { path = "./crates/sp_dsl" }
+sp_expr = { path = "./crates/sp_expr" }
+sp_engine = { path = "./crates/sp_engine", default-features = false }
+rust_decimal = { version = "1", default-features = false, features = ["std", "maths"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+[profile.release]
+opt-level = 3
+lto = true
+codegen-units = 1

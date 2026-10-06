@@ -1,0 +1,9 @@
+[package]
+name = "sp_expr"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "A small, exact-decimal expression language with CEL syntax, for payroll and tax rules"
+
+[dependencies]
+rust_decimal.workspace = true

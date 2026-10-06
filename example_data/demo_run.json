@@ -1,0 +1,28 @@
+{
+  "structure": {
+    "id": "demo", "version": "1", "currency": "GMD",
+    "inputs": [
+      { "name": "base_salary" },
+      { "name": "transport", "default": 0 },
+      { "name": "periods_per_year", "default": 12 },
+      { "name": "loan_amount", "default": 0 }
+    ],
+    "constants": { "paye_table": [[288000, 0], [576000, 0.10], [null, 0.20]] },
+    "components": [
+      { "id": "base", "label": "Base salary", "kind": "earning", "input": "base_salary", "tags": ["pensionable"] },
+      { "id": "transport_allowance", "label": "Transport", "kind": "earning", "input": "transport" },
+      { "id": "housing", "label": "Housing (20% of base)", "kind": "earning", "formula": "pct(base, 20)" },
+      { "id": "gross", "label": "Gross", "kind": "info", "formula": "total(\"earning\")" },
+      { "id": "social", "label": "Social security (5% of pensionable pay)", "kind": "deduction", "tags": ["pre_tax"], "formula": "pct(total(\"pensionable\"), 5)" },
+      { "id": "taxable", "label": "Taxable pay", "kind": "info", "formula": "gross - total(\"pre_tax\")" },
+      { "id": "paye", "label": "Income tax", "kind": "deduction", "formula": "bracket(taxable * periods_per_year, paye_table) / periods_per_year" },
+      { "id": "loan", "label": "Loan repayment", "kind": "deduction", "input": "loan_amount", "when": "loan_amount > 0" },
+      { "id": "employer_social", "label": "Employer social security (10%)", "kind": "employer", "formula": "pct(total(\"pensionable\"), 10)" }
+    ]
+  },
+  "employees": [
+    { "employee_id": "E-001", "variables": { "base_salary": 50000, "transport": 2000 } },
+    { "employee_id": "E-002", "variables": { "base_salary": 120000.50, "loan_amount": 1500 } },
+    { "employee_id": "E-003", "variables": {} }
+  ]
+}
