@@ -142,7 +142,7 @@ fn structure_json(rules: &[Rule]) -> Json {
         }
         components.push(c);
     }
-    for g in 0..50 {
+    for g in 0..50.min(rules.len()) {
         components.push(json!({"id": format!("sub_{g}"), "label": format!("Subtotal {g}"), "kind": "info", "formula": format!("total(\"grp_{g}\")")}));
     }
     let constants: BTreeMap<String, Json> = tables().into_iter().enumerate().map(|(k, t)| (format!("tbl_{k}"), t)).collect();
@@ -346,7 +346,7 @@ impl Oracle {
             }
             out.push((r.id.clone(), amount));
         }
-        for (g, total) in group.iter().enumerate() {
+        for (g, total) in group.iter().enumerate().take(50.min(self.rules.len())) {
             out.push((format!("sub_{g}"), round2(*total)));
         }
         out
