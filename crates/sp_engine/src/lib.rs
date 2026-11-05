@@ -35,7 +35,7 @@ pub use compile::Compiled;
 pub use convert::{value_from_json, value_to_json};
 pub use error::EngineError;
 pub use rules::{PackInfo, RulePack, RuleTest};
-pub use model::{Component, InputSpec, Input, Kind, Line, Mode, NegativeNet, Payslip, Rounding, Structure};
+pub use model::{Component, InputSpec, Input, Kind, Line, Mode, NegativeNet, Payslip, Rounding, Structure, Summary};
 
 #[cfg(test)]
 mod tests;

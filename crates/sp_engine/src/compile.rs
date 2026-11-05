@@ -1,4 +1,6 @@
-use std::collections::{BTreeMap, BTreeSet};
+use std::cmp::Reverse;
+use std::collections::{BTreeSet, BinaryHeap, HashMap};
+use std::hash::{BuildHasherDefault, Hasher};
 
 use rust_decimal::Decimal;
 use sp_expr::{compile, Expr, Value};
@@ -17,13 +19,48 @@ pub(crate) struct Item {
     pub(crate) rounding: Rounding,
 }
 
+/// A small, fast hasher for the short names of components, inputs and constants (the standard one is
+/// built to resist attackers and costs several times more per lookup, and a payroll does millions).
+#[derive(Default)]
+pub(crate) struct NameHasher(u64);
+
+impl Hasher for NameHasher {
+    fn write(&mut self, bytes: &[u8]) {
+        for chunk in bytes.chunks(8) {
+            let mut word = [0u8; 8];
+            word[..chunk.len()].copy_from_slice(chunk);
+            self.0 = (self.0.rotate_left(5) ^ u64::from_le_bytes(word)).wrapping_mul(0x517c_c1b7_2722_0a95);
+        }
+    }
+    fn finish(&self) -> u64 {
+        self.0
+    }
+}
+
+pub(crate) type NameMap<V> = HashMap<String, V, BuildHasherDefault<NameHasher>>;
+
+/// What a name in a formula stands for.
+#[derive(Clone, Copy)]
+pub(crate) enum Slot {
+    /// A component (its position in the structure's list).
+    Item(usize),
+    /// An input (its position in `inputs`).
+    Input(usize),
+    /// A constant (its position in `constants`).
+    Constant(usize),
+}
+
 /// A structure that has been checked and put in calculation order. Make it once, use it for everyone.
 pub struct Compiled {
     pub(crate) structure: Structure,
     pub(crate) items: Vec<Item>,
     pub(crate) order: Vec<usize>,
-    pub(crate) constants: BTreeMap<String, Value>,
+    pub(crate) constants: Vec<Value>,
     pub(crate) inputs: Vec<(String, Option<Value>)>,
+    pub(crate) slots: NameMap<Slot>,
+    /// Every tag there is, and for each item the tags it adds to (as positions in `tag_names`).
+    pub(crate) tag_names: NameMap<usize>,
+    pub(crate) item_tags: Vec<Vec<usize>>,
 }
 
 fn bad(message: impl Into<String>) -> EngineError {
@@ -61,16 +98,21 @@ impl Compiled {
             let default = spec.default.as_ref().map(|d| value_from_json(d).map_err(|e| bad(format!("input `{}`: {e}", spec.name)))).transpose()?;
             inputs.push((spec.name.clone(), default));
         }
-        let mut constants = BTreeMap::new();
+        let mut constants = Vec::new();
+        let mut slots: NameMap<Slot> = NameMap::default();
+        for (position, spec) in structure.inputs.iter().enumerate() {
+            slots.insert(spec.name.clone(), Slot::Input(position));
+        }
         for (name, json) in &structure.constants {
             claim(name, "the constant")?;
-            constants.insert(name.clone(), value_from_json(json).map_err(|e| bad(format!("constant `{name}`: {e}")))?);
+            slots.insert(name.clone(), Slot::Constant(constants.len()));
+            constants.push(value_from_json(json).map_err(|e| bad(format!("constant `{name}`: {e}")))?);
         }
-        for component in &structure.components {
+        for (position, component) in structure.components.iter().enumerate() {
             claim(&component.id, "the component")?;
+            slots.insert(component.id.clone(), Slot::Item(position));
         }
 
-        let component_ids: BTreeSet<&str> = structure.components.iter().map(|c| c.id.as_str()).collect();
         let mut items = Vec::new();
         for component in &structure.components {
             let sources = [component.formula.is_some(), component.amount.is_some(), component.input.is_some()].iter().filter(|b| **b).count();
@@ -103,55 +145,101 @@ impl Compiled {
             items.push(Item { component: component.clone(), formula, fixed, when, tags, rounding: component.round.unwrap_or(structure.rounding) });
         }
 
-        let all_tags: BTreeSet<&str> = items.iter().flat_map(|i| i.tags.iter().map(String::as_str)).collect();
-        // What each component needs to have been calculated first.
-        let mut needs: Vec<BTreeSet<usize>> = vec![BTreeSet::new(); items.len()];
+        // Tags: who has each one (the members) and who totals it (the readers).
+        let mut tag_names: NameMap<usize> = NameMap::default();
+        let mut item_tags: Vec<Vec<usize>> = Vec::with_capacity(items.len());
+        let mut members: Vec<Vec<usize>> = Vec::new();
+        for (index, item) in items.iter().enumerate() {
+            let mut mine = Vec::with_capacity(item.tags.len());
+            for tag in &item.tags {
+                let next = tag_names.len();
+                let id = *tag_names.entry(tag.clone()).or_insert(next);
+                if id == members.len() {
+                    members.push(Vec::new());
+                }
+                members[id].push(index);
+                mine.push(id);
+            }
+            item_tags.push(mine);
+        }
+
+        // What each component needs: other components by name, and every member of a tag it totals.
+        // A tag is one shared stop on the way (a node of its own), so a total over thousands of members
+        // costs one edge per reader, not one per member.
+        let mut needs_items: Vec<Vec<usize>> = vec![Vec::new(); items.len()];
+        let mut needs_tags: Vec<Vec<usize>> = vec![Vec::new(); items.len()];
         for (index, item) in items.iter().enumerate() {
             for expr in [item.formula.as_ref(), item.when.as_ref()].into_iter().flatten() {
                 for name in expr.identifiers() {
-                    if let Some(other) = items.iter().position(|i| i.component.id == name) {
-                        if other == index {
-                            return Err(bad(format!("`{}` refers to itself", item.component.id)));
+                    match slots.get(&name) {
+                        Some(Slot::Item(other)) => {
+                            if *other == index {
+                                return Err(bad(format!("`{}` refers to itself", item.component.id)));
+                            }
+                            needs_items[index].push(*other);
                         }
-                        needs[index].insert(other);
-                    } else if !names.contains(&name) {
-                        return Err(bad(format!("`{}` uses `{name}`, which is not a component, an input or a constant", item.component.id)));
+                        Some(_) => {}
+                        None => return Err(bad(format!("`{}` uses `{name}`, which is not a component, an input or a constant", item.component.id))),
                     }
                 }
                 for tag in expr.literal_arguments("total") {
-                    if !all_tags.contains(tag.as_str()) {
+                    let Some(&id) = tag_names.get(&tag) else {
                         return Err(bad(format!("`{}` totals the tag `{tag}`, which nothing has", item.component.id)));
+                    };
+                    if members[id].contains(&index) {
+                        return Err(bad(format!("`{}` totals `{tag}` and is tagged `{tag}` itself", item.component.id)));
                     }
-                    for (other, candidate) in items.iter().enumerate() {
-                        if candidate.tags.contains(&tag) {
-                            if other == index {
-                                return Err(bad(format!("`{}` totals `{tag}` and is tagged `{tag}` itself", item.component.id)));
-                            }
-                            needs[index].insert(other);
-                        }
-                    }
+                    needs_tags[index].push(id);
                 }
             }
+            needs_items[index].sort_unstable();
+            needs_items[index].dedup();
+            needs_tags[index].sort_unstable();
+            needs_tags[index].dedup();
         }
 
-        // The lowest-numbered component whose needs are done goes next, so the order stays the written one when it can.
+        // The lowest-numbered component whose needs are done goes next, so the order stays the written one
+        // when it can (a min-heap of the components that are ready).
+        let mut waiting: Vec<usize> = (0..items.len()).map(|i| needs_items[i].len() + needs_tags[i].len()).collect();
+        let mut tag_waiting: Vec<usize> = members.iter().map(Vec::len).collect();
+        let mut item_readers: Vec<Vec<usize>> = vec![Vec::new(); items.len()];
+        let mut tag_readers: Vec<Vec<usize>> = vec![Vec::new(); members.len()];
+        for index in 0..items.len() {
+            for &other in &needs_items[index] {
+                item_readers[other].push(index);
+            }
+            for &tag in &needs_tags[index] {
+                tag_readers[tag].push(index);
+            }
+        }
+        let mut ready: BinaryHeap<Reverse<usize>> = (0..items.len()).filter(|i| waiting[*i] == 0).map(Reverse).collect();
         let mut order = Vec::with_capacity(items.len());
-        let mut done = vec![false; items.len()];
-        while order.len() < items.len() {
-            let next = (0..items.len()).find(|i| !done[*i] && needs[*i].iter().all(|n| done[*n]));
-            match next {
-                Some(i) => {
-                    done[i] = true;
-                    order.push(i);
+        while let Some(Reverse(next)) = ready.pop() {
+            order.push(next);
+            let mut freed: Vec<usize> = Vec::new();
+            freed.extend(item_readers[next].iter().copied());
+            for &tag in &item_tags[next] {
+                tag_waiting[tag] -= 1;
+                if tag_waiting[tag] == 0 {
+                    freed.extend(tag_readers[tag].iter().copied());
                 }
-                None => {
-                    let stuck: Vec<&str> = (0..items.len()).filter(|i| !done[*i]).map(|i| items[i].component.id.as_str()).collect();
-                    return Err(bad(format!("these components wait on each other: {}", stuck.join(", "))));
+            }
+            for reader in freed {
+                waiting[reader] -= 1;
+                if waiting[reader] == 0 {
+                    ready.push(Reverse(reader));
                 }
             }
         }
-        let _ = component_ids;
-        Ok(Compiled { structure: structure.clone(), items, order, constants, inputs })
+        if order.len() < items.len() {
+            let mut done = vec![false; items.len()];
+            order.iter().for_each(|i| done[*i] = true);
+            let stuck: Vec<&str> = (0..items.len()).filter(|i| !done[*i]).map(|i| items[i].component.id.as_str()).collect();
+            let shown = stuck.iter().take(20).copied().collect::<Vec<_>>().join(", ");
+            let more = if stuck.len() > 20 { format!(" and {} more", stuck.len() - 20) } else { String::new() };
+            return Err(bad(format!("these components wait on each other: {shown}{more}")));
+        }
+        Ok(Compiled { structure: structure.clone(), items, order, constants, inputs, slots, tag_names, item_tags })
     }
 
     pub fn structure(&self) -> &Structure {

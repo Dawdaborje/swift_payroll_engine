@@ -5,6 +5,8 @@ use crate::error::{Error, Result};
 use crate::value::Value;
 
 const MAX_DEPTH: usize = 64;
+/// `a.b.c[0]...`: how many member and index steps may follow one another.
+const MAX_POSTFIX: usize = 16;
 
 #[derive(Debug, Clone, PartialEq)]
 enum Tok {
@@ -149,23 +151,32 @@ impl Parser {
     }
 
     fn or(&mut self) -> Result<Node> {
-        let mut left = self.and()?;
-        while self.eat("||") {
-            left = Node::Or(Box::new(left), Box::new(self.and()?));
+        let first = self.and()?;
+        if !matches!(self.peek(), Tok::Punct("||")) {
+            return Ok(first);
         }
-        Ok(left)
+        let mut items = vec![first];
+        while self.eat("||") {
+            items.push(self.and()?);
+        }
+        Ok(Node::Or(items))
     }
 
     fn and(&mut self) -> Result<Node> {
-        let mut left = self.relation()?;
-        while self.eat("&&") {
-            left = Node::And(Box::new(left), Box::new(self.relation()?));
+        let first = self.relation()?;
+        if !matches!(self.peek(), Tok::Punct("&&")) {
+            return Ok(first);
         }
-        Ok(left)
+        let mut items = vec![first];
+        while self.eat("&&") {
+            items.push(self.relation()?);
+        }
+        Ok(Node::And(items))
     }
 
     fn relation(&mut self) -> Result<Node> {
-        let mut left = self.additive()?;
+        let first = self.additive()?;
+        let mut rest = Vec::new();
         loop {
             let at = self.at();
             let op = match self.peek() {
@@ -176,39 +187,41 @@ impl Parser {
                 Tok::Punct(">") => Op::Gt,
                 Tok::Punct(">=") => Op::Ge,
                 Tok::Ident(word) if word == "in" => Op::In,
-                _ => return Ok(left),
+                _ => return Ok(chain(first, rest)),
             };
             self.next();
-            left = Node::Bin(op, Box::new(left), Box::new(self.additive()?), at);
+            rest.push((op, self.additive()?, at));
         }
     }
 
     fn additive(&mut self) -> Result<Node> {
-        let mut left = self.multiplicative()?;
+        let first = self.multiplicative()?;
+        let mut rest = Vec::new();
         loop {
             let at = self.at();
             let op = match self.peek() {
                 Tok::Punct("+") => Op::Add,
                 Tok::Punct("-") => Op::Sub,
-                _ => return Ok(left),
+                _ => return Ok(chain(first, rest)),
             };
             self.next();
-            left = Node::Bin(op, Box::new(left), Box::new(self.multiplicative()?), at);
+            rest.push((op, self.multiplicative()?, at));
         }
     }
 
     fn multiplicative(&mut self) -> Result<Node> {
-        let mut left = self.unary()?;
+        let first = self.unary()?;
+        let mut rest = Vec::new();
         loop {
             let at = self.at();
             let op = match self.peek() {
                 Tok::Punct("*") => Op::Mul,
                 Tok::Punct("/") => Op::Div,
                 Tok::Punct("%") => Op::Rem,
-                _ => return Ok(left),
+                _ => return Ok(chain(first, rest)),
             };
             self.next();
-            left = Node::Bin(op, Box::new(left), Box::new(self.unary()?), at);
+            rest.push((op, self.unary()?, at));
         }
     }
 
@@ -228,8 +241,13 @@ impl Parser {
 
     fn postfix(&mut self) -> Result<Node> {
         let mut node = self.primary()?;
+        let mut steps = 0;
         loop {
             let at = self.at();
+            if steps >= MAX_POSTFIX && matches!(self.peek(), Tok::Punct(".") | Tok::Punct("[")) {
+                return Err(Error::at("too many `.name` and `[index]` steps in a row", at));
+            }
+            steps += 1;
             if self.eat(".") {
                 match self.next() {
                     Tok::Ident(name) => node = Node::Member(Box::new(node), name, at),
@@ -306,6 +324,10 @@ impl Parser {
             other => Err(Error::at(format!("unexpected {}", describe(&other)), at)),
         }
     }
+}
+
+fn chain(first: Node, rest: Vec<(Op, Node, usize)>) -> Node {
+    if rest.is_empty() { first } else { Node::Chain(Box::new(first), rest) }
 }
 
 fn describe(tok: &Tok) -> String {

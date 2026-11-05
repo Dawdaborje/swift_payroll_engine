@@ -125,16 +125,17 @@ impl RulePack {
     pub fn as_component(&self, id: &str, label: &str, kind: Kind, arguments: &BTreeMap<String, String>) -> Result<(BTreeMap<String, Json>, Component), String> {
         let prefix = self.info.id.replace(['.', '-'], "_");
         let mut constants = BTreeMap::new();
-        let mut source = self.expression.source().to_string();
+        let mut replacements: BTreeMap<&str, String> = BTreeMap::new();
         for name in self.constants.keys() {
             let renamed = format!("{prefix}_{name}");
             constants.insert(renamed.clone(), self.info.constants.get(name).cloned().unwrap_or(Json::Null));
-            source = replace_word(&source, name, &renamed);
+            replacements.insert(name, renamed);
         }
         for name in &self.info.inputs {
             let argument = arguments.get(name).ok_or_else(|| format!("{}: give the input `{name}` a formula", self.info.id))?;
-            source = replace_word(&source, name, &format!("({argument})"));
+            replacements.insert(name, format!("({argument})"));
         }
+        let source = substitute(self.expression.source(), &replacements);
         Ok((constants, Component {
             id: id.to_string(),
             label: label.to_string(),
@@ -150,18 +151,57 @@ impl RulePack {
     }
 }
 
-/// Replace whole words only, so `table` does not change `tables`.
-fn replace_word(text: &str, word: &str, with: &str) -> String {
+/// Replace names in an expression, all at once and only where the language reads a name: not inside a
+/// string, not in a `//` comment, not a function being called (`min(`), and not a key after a `.`. One
+/// pass, so a replacement is never itself rewritten by another.
+fn substitute(text: &str, replacements: &BTreeMap<&str, String>) -> String {
+    let bytes = text.as_bytes();
     let mut out = String::with_capacity(text.len());
-    let mut rest = text;
-    while let Some(found) = rest.find(word) {
-        let before_ok = rest[..found].chars().next_back().is_none_or(|c| !(c.is_ascii_alphanumeric() || c == '_'));
-        let end = found + word.len();
-        let after_ok = rest[end..].chars().next().is_none_or(|c| !(c.is_ascii_alphanumeric() || c == '_'));
-        out.push_str(&rest[..found]);
-        out.push_str(if before_ok && after_ok { with } else { word });
-        rest = &rest[end..];
+    let mut i = 0;
+    let mut after_dot = false;
+    while i < bytes.len() {
+        let c = bytes[i];
+        if c == b'"' || c == b'\'' {
+            let start = i;
+            i += 1;
+            while i < bytes.len() && bytes[i] != c {
+                i += if bytes[i] == b'\\' { 2 } else { 1 };
+            }
+            i = (i + 1).min(bytes.len());
+            out.push_str(&text[start..i]);
+            after_dot = false;
+        } else if c == b'/' && bytes.get(i + 1) == Some(&b'/') {
+            let start = i;
+            while i < bytes.len() && bytes[i] != b'\n' {
+                i += 1;
+            }
+            out.push_str(&text[start..i]);
+        } else if c.is_ascii_digit() {
+            let start = i;
+            while i < bytes.len() && (bytes[i].is_ascii_digit() || (bytes[i] == b'.' && bytes.get(i + 1).is_some_and(u8::is_ascii_digit))) {
+                i += 1;
+            }
+            out.push_str(&text[start..i]);
+            after_dot = false;
+        } else if c.is_ascii_alphabetic() || c == b'_' {
+            let start = i;
+            while i < bytes.len() && (bytes[i].is_ascii_alphanumeric() || bytes[i] == b'_') {
+                i += 1;
+            }
+            let word = &text[start..i];
+            let is_call = text[i..].trim_start().starts_with('(');
+            match replacements.get(word) {
+                Some(with) if !after_dot && !is_call => out.push_str(with),
+                _ => out.push_str(word),
+            }
+            after_dot = false;
+        } else {
+            out.push(c as char);
+            if !c.is_ascii_whitespace() {
+                after_dot = c == b'.';
+            }
+            i += 1;
+        }
     }
-    out.push_str(rest);
     out
 }

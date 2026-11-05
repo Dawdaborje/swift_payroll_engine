@@ -31,9 +31,11 @@ pub(crate) enum Node {
     Call(String, Vec<Node>, usize),
     Not(Box<Node>, usize),
     Neg(Box<Node>, usize),
-    Bin(Op, Box<Node>, Box<Node>, usize),
-    And(Box<Node>, Box<Node>),
-    Or(Box<Node>, Box<Node>),
+    /// `first op rest op rest ...`, left to right. One flat node however long the chain, so a formula
+    /// that adds up thousands of terms neither nests deeply nor overflows the stack.
+    Chain(Box<Node>, Vec<(Op, Node, usize)>),
+    And(Vec<Node>),
+    Or(Vec<Node>),
     Cond(Box<Node>, Box<Node>, Box<Node>),
 }
 
@@ -52,7 +54,7 @@ impl Expr {
 
     /// Run it. The same environment always gives the same answer.
     pub fn eval(&self, env: &dyn Env) -> Result<Value> {
-        eval(&self.root, env, 0)
+        eval(&self.root, env, 0).map(std::borrow::Cow::into_owned)
     }
 
     /// Every name the expression reads (not the functions it calls, nor the keys after a `.`).
@@ -81,10 +83,15 @@ fn walk(node: &Node, visit: &mut dyn FnMut(&Node)) {
             walk(v, visit);
         }),
         Node::Member(inner, ..) | Node::Not(inner, _) | Node::Neg(inner, _) => walk(inner, visit),
-        Node::Index(a, b, _) | Node::Bin(_, a, b, _) | Node::And(a, b) | Node::Or(a, b) => {
+        Node::Index(a, b, _) => {
             walk(a, visit);
             walk(b, visit);
         }
+        Node::Chain(first, rest) => {
+            walk(first, visit);
+            rest.iter().for_each(|(_, n, _)| walk(n, visit));
+        }
+        Node::And(items) | Node::Or(items) => items.iter().for_each(|n| walk(n, visit)),
         Node::Call(_, args, _) => args.iter().for_each(|n| walk(n, visit)),
         Node::Cond(c, a, b) => {
             walk(c, visit);

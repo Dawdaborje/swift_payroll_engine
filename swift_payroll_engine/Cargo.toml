@@ -9,3 +9,11 @@ description = "Command line for the Swift payroll engine: a salary structure and
 sp_engine = { workspace = true, features = ["parallel"] }
 serde.workspace = true
 serde_json = { workspace = true, features = ["arbitrary_precision"] }
+
+[dev-dependencies]
+rayon = "1"
+rust_decimal.workspace = true
+
+[[example]]
+name = "stress"
+path = "../example_data/stress.rs"

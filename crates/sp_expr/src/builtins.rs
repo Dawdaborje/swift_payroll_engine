@@ -16,7 +16,7 @@ use crate::error::{Error, Result};
 use crate::eval::num;
 use crate::value::Value;
 
-fn arity(name: &str, args: &[Value], wanted: std::ops::RangeInclusive<usize>) -> Result<()> {
+fn arity(name: &str, args: &[&Value], wanted: std::ops::RangeInclusive<usize>) -> Result<()> {
     if wanted.contains(&args.len()) {
         Ok(())
     } else {
@@ -24,10 +24,10 @@ fn arity(name: &str, args: &[Value], wanted: std::ops::RangeInclusive<usize>) ->
     }
 }
 
-fn numbers(args: &[Value]) -> Result<Vec<Decimal>> {
+fn numbers(args: &[&Value]) -> Result<Vec<Decimal>> {
     match args {
         [Value::List(items)] => items.iter().map(num).collect(),
-        _ => args.iter().map(num).collect(),
+        _ => args.iter().map(|v| num(v)).collect(),
     }
 }
 
@@ -109,7 +109,7 @@ fn rate_at(x: Decimal, table: &Value) -> Result<Decimal> {
     Err(Error::new("the amount is above the top of the table"))
 }
 
-pub(crate) fn call(name: &str, args: &[Value]) -> Result<Value> {
+pub(crate) fn call(name: &str, args: &[&Value]) -> Result<Value> {
     let number = |d: Decimal| Ok(Value::Num(d));
     match name {
         "min" | "max" => {
@@ -136,7 +136,7 @@ pub(crate) fn call(name: &str, args: &[Value]) -> Result<Value> {
         "round" | "round_even" => {
             arity(name, args, 1..=2)?;
             let strategy = if name == "round" { RoundingStrategy::MidpointAwayFromZero } else { RoundingStrategy::MidpointNearestEven };
-            number(num(&args[0])?.round_dp_with_strategy(digits(args.get(1))?, strategy))
+            number(num(&args[0])?.round_dp_with_strategy(digits(args.get(1).copied())?, strategy))
         }
         "clamp" => {
             arity(name, args, 3..=3)?;
@@ -163,7 +163,7 @@ pub(crate) fn call(name: &str, args: &[Value]) -> Result<Value> {
                 return Err(Error::new("the whole is above zero"));
             }
             let product = num(&args[0])?.checked_mul(num(&args[1])?).ok_or_else(|| Error::new("the number is too large"))?;
-            number(product / whole)
+            number(product.checked_div(whole).ok_or_else(|| Error::new("the number is too large"))?)
         }
         "bracket" => {
             arity(name, args, 2..=2)?;
@@ -184,7 +184,7 @@ pub(crate) fn call(name: &str, args: &[Value]) -> Result<Value> {
             };
             Ok(Value::from(n as i64))
         }
-        "coalesce" => Ok(args.iter().find(|v| !matches!(v, Value::Null)).cloned().unwrap_or(Value::Null)),
+        "coalesce" => Ok(args.iter().find(|v| !matches!(***v, Value::Null)).map_or(Value::Null, |v| (*v).clone())),
         "dec" => {
             arity(name, args, 1..=1)?;
             match &args[0] {

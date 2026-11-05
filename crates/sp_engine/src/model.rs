@@ -181,3 +181,15 @@ pub struct Payslip {
     /// What deductions could not be taken because net pay was held at zero.
     pub shortfall: Decimal,
 }
+
+/// A person's totals without the lines: what [`Compiled::summarize`](crate::Compiled::summarize) returns.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Summary {
+    pub employee_id: String,
+    pub gross: Decimal,
+    pub deductions: Decimal,
+    pub net: Decimal,
+    pub employer_cost: Decimal,
+    /// What deductions could not be taken because net pay was held at zero.
+    pub shortfall: Decimal,
+}
