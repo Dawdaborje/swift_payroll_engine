@@ -57,8 +57,7 @@ See [docs/data-format.md](./docs/data-format.md) and [docs/design.md](./docs/des
 0.1 ran every rule with `f64` (and rewrote whole numbers in the expression text with a regex to make CEL
 accept them), let a rule see only `gross`, had no way for one deduction to use another, and did not build
 (two packages shared a name). 0.2 replaces the rule engines with the exact-decimal language, so Rhai rules
-are no longer accepted; the HTTP server and Python bindings of 0.1 were stubs and are gone until they are
-needed.
+are no longer accepted; the Python bindings of 0.1 were stubs and are gone until they are needed.
 
 ## License
 

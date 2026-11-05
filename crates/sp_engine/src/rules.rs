@@ -21,6 +21,13 @@ pub struct RuleTest {
     pub inputs: BTreeMap<String, Json>,
     /// The expected result, as text.
     pub expect: String,
+    /// Where `expect` comes from: `authority` (printed by the tax authority), `secondary` (a third party's
+    /// example) or `calculated` (worked out from the source's rates by the pack's author).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub origin: Option<String>,
+    /// Where in the source the value is found, or how it differs from it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_ref: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,6 +42,9 @@ pub struct PackInfo {
     pub valid_to: Option<String>,
     /// The law or notice it follows (a citation or a link).
     pub source: String,
+    /// Saved copies of what `source` cites, relative to the rules repository's `sources/` folder.
+    #[serde(default)]
+    pub source_files: Vec<String>,
     /// True only once somebody has checked the figures against that source.
     #[serde(default)]
     pub verified: bool,

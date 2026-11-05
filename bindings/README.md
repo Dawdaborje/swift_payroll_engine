@@ -23,4 +23,4 @@ The JSON input/output shape matches [docs/data-format.md](../docs/data-format.md
 
 ## JavaScript / TypeScript
 
-Planned via HTTP API (`POST /v1/calculate`) or later `napi-rs` / `wasm-pack`. See [technical docs](../docs/technical/README.md#javascript--typescript).
+Planned via `napi-rs` / `wasm-pack`. See [technical docs](../docs/technical/README.md#javascript--typescript).

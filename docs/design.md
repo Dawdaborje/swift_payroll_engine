@@ -24,7 +24,7 @@ or a typo stops the structure from loading.
 * Several currencies in one structure.
 * Retroactive recalculation and arrears: a new run with corrected inputs; comparing runs is the caller's job.
 * Rhai (or any other `f64` language).
-* A service wrapper and Python bindings.
+* Python bindings.
 
 ## Testing
 
