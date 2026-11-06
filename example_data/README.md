@@ -33,3 +33,19 @@ just stress-1m
   unknown variable, an amount at the limit of the number type, a negative salary...). Each must fail alone.
   A person the engine refuses for negative net pay must really have a negative net by the oracle's sums.
 * **Determinism**: the checksum of all net pay is the same for any `--threads`.
+
+## Measuring one plugin batch in WebAssembly
+
+`wasm_bench.rs` does what the aether `hr_payroll` plugin does in one `calculate_batch` call (parse the structure,
+compile it, calculate people, turn their lines into JSON) so it can be run under `wasmtime`, which counts fuel the
+way the aether kernel does (a call gets 50,000,000):
+
+```sh
+CARGO_PROFILE_RELEASE_OPT_LEVEL=s cargo build --release --target wasm32-wasip2 -p swift_payroll_engine --example wasm_bench
+wasmtime run -W fuel=50000000 --dir . target/wasm32-wasip2/release/examples/wasm_bench.wasm \
+    structure.json people.ndjson plugin 20      # modes: plugin, text, lines, compact, summary, compile, read
+```
+
+`odoo_style_baseline.py` runs the same structure and people the way Odoo's `hr_payroll` evaluates a payslip
+(rules in sequence, Python code per rule against a dict, float amounts), with everything Odoo adds around it
+left out, so it is a floor for Odoo, not an estimate.

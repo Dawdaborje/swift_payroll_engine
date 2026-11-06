@@ -172,6 +172,11 @@ fn random_structures_and_people_never_panic_and_keep_their_invariants() {
                     check_slip(&slip, &structure);
                     // Same answer twice, and the totals-only path agrees with the full one.
                     assert_eq!(slip, compiled.run(&input, round % 2 == 0).unwrap());
+                    // The amounts-only path matches the lines, component for component, in the structure's order.
+                    let calc = compiled.calculate_amounts(&input).unwrap();
+                    assert_eq!(calc.amounts, slip.lines.iter().map(|l| l.amount).collect::<Vec<_>>());
+                    assert_eq!(calc.applied, slip.lines.iter().map(|l| l.applied).collect::<Vec<_>>());
+                    assert_eq!(calc.amounts.len(), structure.components.len());
                     let summary = compiled.summarize(&input).unwrap();
                     assert_eq!((summary.gross, summary.deductions, summary.net, summary.employer_cost, summary.shortfall), (slip.gross, slip.deductions, slip.net, slip.employer_cost, slip.shortfall));
                 }

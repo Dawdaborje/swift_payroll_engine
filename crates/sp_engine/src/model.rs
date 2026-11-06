@@ -193,3 +193,13 @@ pub struct Summary {
     /// What deductions could not be taken because net pay was held at zero.
     pub shortfall: Decimal,
 }
+
+/// A person's totals and every component's amount (see [`Compiled::calculate_amounts`](crate::Compiled::calculate_amounts)).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Calculation {
+    pub summary: Summary,
+    /// One amount per component, in the order of `Structure::components`.
+    pub amounts: Vec<Decimal>,
+    /// False where the component's condition was not met (its amount is zero).
+    pub applied: Vec<bool>,
+}

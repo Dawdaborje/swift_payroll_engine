@@ -17,3 +17,7 @@ rust_decimal.workspace = true
 [[example]]
 name = "stress"
 path = "../example_data/stress.rs"
+
+[[example]]
+name = "wasm_bench"
+path = "../example_data/wasm_bench.rs"

@@ -8,7 +8,7 @@ use sp_expr::{Env, Value};
 use crate::compile::{Compiled, Slot};
 use crate::convert::value_from_json;
 use crate::error::EngineError;
-use crate::model::{Explain, Input, Kind, Line, NegativeNet, Payslip, Summary};
+use crate::model::{Calculation, Explain, Input, Kind, Line, NegativeNet, Payslip, Summary};
 
 /// What a formula can see while one person is calculated. Names were turned into positions when the
 /// structure was compiled, so a lookup is one hash of a short name and an index, and nothing is copied
@@ -235,6 +235,15 @@ impl Compiled {
             employer_cost: s.employer_cost,
             shortfall: s.shortfall,
         })
+    }
+
+    /// Calculate one person and return the totals with every component's amount, in the order the structure
+    /// lists its components (`structure().components`), and whether its condition was met. No labels, tags or
+    /// ids are copied: a payslip that records which structure it was calculated with can show them from the
+    /// structure, so this is the cheapest way to keep the lines of very many people.
+    pub fn calculate_amounts(&self, input: &Input) -> Result<Calculation, EngineError> {
+        let done = self.calculate(input, false)?;
+        Ok(Calculation { summary: done.summary, amounts: done.amounts, applied: done.applied })
     }
 
     /// Calculate one person and keep only the totals. The same numbers as [`run`](Self::run), without
