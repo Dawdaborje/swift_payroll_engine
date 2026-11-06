@@ -34,6 +34,8 @@ mod run;
 pub use compile::Compiled;
 pub use convert::{value_from_json, value_to_json};
 pub use error::EngineError;
+/// The number type of every amount, so a caller can add them up without converting each one to text.
+pub use rust_decimal::Decimal;
 pub use rules::{PackInfo, RulePack, RuleTest};
 pub use model::{Component, InputSpec, Input, Kind, Line, Mode, NegativeNet, Payslip, Rounding, Structure, Summary, Calculation};
 

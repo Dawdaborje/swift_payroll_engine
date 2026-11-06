@@ -5,7 +5,7 @@
 //!       <structure.json> <people.ndjson> <mode> <people>
 //!
 //! Modes: `plugin` (run + lines to a JSON value, what the plugin does), `text` (lines straight to text), `lines` (built, unused),
-//! `compact` (amounts only), `summary` (totals only), `compile` (parse and compile), `read` (start up and read the files).
+//! `compact` (amounts only), `batch` (what hr_payroll does now), `summary` (totals only), `compile` (parse and compile), `read` (start up and read the files).
 //! Prints the time of each phase. The fuel the whole call used is found by lowering `-W fuel=` until it runs out
 //! (see example_data/README.md); the aether kernel allows 50,000,000 per call.
 
@@ -39,6 +39,7 @@ fn main() {
     let t = Instant::now();
     let mut net_sum = rust_decimal::Decimal::ZERO;
     let mut bytes = 0usize;
+    let mut sums: Vec<sp_engine::Decimal> = Vec::new();
     for person in &people {
         match mode {
             "summary" => {
@@ -57,6 +58,20 @@ fn main() {
                 if let Ok(slip) = compiled.run(person, false) {
                     net_sum += slip.net;
                     bytes += serde_json::to_string(&slip.lines).unwrap().len();
+                }
+            }
+            // What hr_payroll does now: amounts and running sums, lines kept as a compact JSON array.
+            "batch" => {
+                if let Ok(c) = compiled.calculate_amounts(person) {
+                    net_sum += c.summary.net;
+                    if sums.is_empty() {
+                        sums = vec![Default::default(); c.amounts.len()];
+                    }
+                    for (sum, amount) in sums.iter_mut().zip(&c.amounts) {
+                        *sum += *amount;
+                    }
+                    let value = serde_json::Value::Array(c.amounts.iter().map(|a| serde_json::Value::String(a.to_string())).collect());
+                    bytes += value.to_string().len();
                 }
             }
             // Amounts only, in structure order, as a JSON value: what a payslip needs if it keeps its structure id.
