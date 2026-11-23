@@ -50,6 +50,55 @@ impl Rounding {
     }
 }
 
+#[cfg(kani)]
+mod verification {
+    use super::{Mode, Rounding};
+    use rust_decimal::Decimal;
+
+    /// A representative integer amount is unchanged by zero-digit rounding for each supported mode.
+    #[kani::proof]
+    fn representative_integer_survives_zero_digit_rounding() {
+        let amount = Decimal::from(1234_i64);
+        for mode in [Mode::HalfUp, Mode::HalfEven, Mode::Down, Mode::Up] {
+            let rounded = Rounding { digits: 0, mode }.apply(amount);
+            assert_eq!(rounded, amount);
+        }
+    }
+
+    /// Checks positive and negative half-cent behavior against the engine's documented rounding modes.
+    #[kani::proof]
+    fn half_cent_rounding_matches_declared_modes() {
+        let positive = Decimal::new(2675, 3);
+        let negative = Decimal::new(-2675, 3);
+        let half_up = Rounding { digits: 2, mode: Mode::HalfUp };
+        let half_even = Rounding { digits: 2, mode: Mode::HalfEven };
+        let down = Rounding { digits: 2, mode: Mode::Down };
+        let up = Rounding { digits: 2, mode: Mode::Up };
+        assert_eq!(half_up.apply(positive), Decimal::new(268, 2));
+        assert_eq!(half_up.apply(negative), Decimal::new(-268, 2));
+        assert_eq!(half_even.apply(positive), Decimal::new(268, 2));
+        assert_eq!(half_even.apply(negative), Decimal::new(-268, 2));
+        assert_eq!(down.apply(positive), Decimal::new(267, 2));
+        assert_eq!(down.apply(negative), Decimal::new(-267, 2));
+        assert_eq!(up.apply(positive), Decimal::new(268, 2));
+        assert_eq!(up.apply(negative), Decimal::new(-268, 2));
+    }
+
+    /// Checks rounding at the one-trillion boundary, including carry into a new integer digit.
+    #[kani::proof]
+    fn trillion_boundary_rounding_has_no_lost_carry() {
+        let positive = Decimal::new(999_999_999_999_995, 3);
+        let negative = Decimal::new(-999_999_999_999_995, 3);
+        let trillion = Decimal::from(1_000_000_000_000_i64);
+        let just_below = Decimal::new(99_999_999_999_999, 2);
+
+        assert_eq!(Rounding { digits: 2, mode: Mode::HalfUp }.apply(positive), trillion);
+        assert_eq!(Rounding { digits: 2, mode: Mode::HalfUp }.apply(negative), -trillion);
+        assert_eq!(Rounding { digits: 2, mode: Mode::Down }.apply(positive), just_below);
+        assert_eq!(Rounding { digits: 2, mode: Mode::Up }.apply(positive), trillion);
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Kind {

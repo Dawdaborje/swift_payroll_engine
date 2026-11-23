@@ -203,3 +203,38 @@ pub(crate) fn call(name: &str, args: &[&Value]) -> Result<Value> {
         other => Err(Error::new(format!("there is no function `{other}`"))),
     }
 }
+
+#[cfg(kani)]
+mod verification {
+    use super::call;
+    use crate::Value;
+    use rust_decimal::Decimal;
+
+    /// Confirms the percentage helper uses percent units and does not introduce binary floating point.
+    #[kani::proof]
+    fn percent_helper_uses_percent_units() {
+        let salary = Value::Num(Decimal::from(1000));
+        let rate = Value::Num(Decimal::from(5));
+        assert_eq!(call("pct", &[&salary, &rate]), Ok(Value::Num(Decimal::from(50))));
+    }
+
+    /// Checks a percentage calculation at the selected one-trillion amount bound.
+    #[kani::proof]
+    fn percent_helper_handles_one_trillion() {
+        let salary = Value::Num(Decimal::from(1_000_000_000_000_i64));
+        let rate = Value::Num(Decimal::from(5));
+        assert_eq!(
+            call("pct", &[&salary, &rate]),
+            Ok(Value::Num(Decimal::from(50_000_000_000_i64)))
+        );
+    }
+
+    /// A zero denominator for prorate is reported as an error instead of panicking or returning a number.
+    #[kani::proof]
+    fn prorate_rejects_a_zero_whole() {
+        let amount = Value::Num(Decimal::from(100));
+        let part = Value::Num(Decimal::from(1));
+        let whole = Value::Num(Decimal::ZERO);
+        assert!(call("prorate", &[&amount, &part, &whole]).is_err());
+    }
+}

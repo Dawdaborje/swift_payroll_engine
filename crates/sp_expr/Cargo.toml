@@ -5,5 +5,8 @@ edition.workspace = true
 license.workspace = true
 description = "A small, exact-decimal expression language with CEL syntax, for payroll and tax rules"
 
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
+
 [dependencies]
 rust_decimal.workspace = true
