@@ -26,6 +26,9 @@ cargo run -- --input example_data/demo_run.json --explain
 cargo run -- check-rules ../swift_tax_rules/countries
 ```
 
+The demo intentionally leaves E-003's required `base_salary` out. The CLI reports that employee's error
+after calculating the other employees, then exits with status 2 to signal that one result failed.
+
 ## Layout
 
 ```text

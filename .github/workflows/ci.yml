@@ -10,4 +10,28 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --workspace
-      - run: cargo run -q -- --input example_data/demo_run.json
+      - name: Check the mixed-result CLI demo
+        shell: bash
+        run: |
+          set +e
+          cargo run -q -- --input example_data/demo_run.json > "$RUNNER_TEMP/demo_run_output.json"
+          status=$?
+          set -e
+
+          if [[ "$status" -ne 2 ]]; then
+            echo "Expected demo CLI exit code 2 for the intentionally invalid E-003 input, got $status"
+            exit 1
+          fi
+
+          python3 - "$RUNNER_TEMP/demo_run_output.json" <<'PY'
+          import json
+          import sys
+
+          with open(sys.argv[1], encoding="utf-8") as output_file:
+              results = json.load(output_file)
+
+          assert len(results) == 3, f"expected three employee results, got {len(results)}"
+          assert results[0]["net"] == "54800.00", results[0]
+          assert results[1]["net"] == "116100.46", results[1]
+          assert results[2]["error"] == "E-003: `base_salary` is missing", results[2]
+          PY

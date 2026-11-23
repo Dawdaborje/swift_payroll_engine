@@ -2,7 +2,7 @@
 
 | File | What it is |
 |---|---|
-| `demo_run.json` | A small payroll for the CLI: `swift_payroll_engine --input example_data/demo_run.json` |
+| `demo_run.json` | A mixed-result CLI example: two successful employees and E-003 missing the required salary. The CLI prints all three results and exits with status 2. |
 | `stress.rs` | Scale harness (a cargo example): generates demo tax rules in CEL and employees, runs them, checks every answer |
 | `stress_structure_10k.json` | A structure with 10,000 demo tax rules (about 10,056 components, 100 band tables) made by `stress.rs gen` |
 | `stress_structure_10k_employees.ndjson` | 1,000 demo employees (2 in 1,000 are deliberately broken) |
