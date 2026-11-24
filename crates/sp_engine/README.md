@@ -12,7 +12,8 @@ dependency order. Formulas are written in the expression language of [`sp_expr`]
   unknown name or a typo **before** any payroll runs. `calculation_order()` shows the order.
 - `Input`: one person (`employee_id` and `variables`).
 - `Payslip`: the result, with `lines`, `gross`, `deductions`, `net`, `employer_cost` and `shortfall`.
-  With `explain` on, each line carries its formula and the names it read.
+  With `explain` on, each line carries its source (formula, input, or fixed amount) and the names read by its
+  formula or condition.
 - `RulePack`: a tax or contribution rule kept as data (a `.cel` expression plus a `.json` description with
   its own tests). `as_component` plugs it into a structure.
 - `EngineError`: compile and calculation errors.
@@ -44,5 +45,9 @@ let results = compiled.run_all(&[input], false);
 
 - `parallel` (default): `run_all` uses Rayon. Turn it off for WebAssembly.
 
-See [data-format.md](../../docs/data-format.md) for the JSON shapes and [design.md](../../docs/design.md)
-for why it is built this way.
+The crate enables `parallel` and `exact-json` by default. Disable `parallel` for WebAssembly or single-threaded
+hosts. `exact-json` enables `serde_json/arbitrary_precision`, so JSON decimal numbers keep their written value
+instead of passing through `f64`; hosts that disable it should account for their JSON parser's number handling.
+
+See [data-format.md](../../docs/data-format.md) for the JSON and CLI formats, [design.md](../../docs/design.md)
+for why it is built this way, and [Kani verification](../../kani/README.md) for the current proof coverage.

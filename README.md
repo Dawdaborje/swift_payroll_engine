@@ -1,8 +1,8 @@
 # Swift Payroll Engine
 
 A payroll calculation engine in Rust. A **salary structure** (earnings, deductions, employer contributions,
-working figures) goes in with a list of people; **payslips** come out, exact to the cent, the same every
-time.
+working figures) goes in with a list of people; **payslips** come out as reproducible decimal amounts, rounded
+using the structure's settings (two digits by default).
 
 * **Exact decimals.** Every amount is a decimal number; rates are read as written (`0.15` is fifteen
   hundredths). Nothing goes through binary floating point, so `0.1 + 0.2` is `0.3` and a payslip can be
@@ -13,9 +13,9 @@ time.
   `total("tag")`; the engine sorts them by what they need, and refuses a loop, an unknown name, or a typo
   **before** any payroll runs.
 * **Strict inputs.** A missing input is an error, never zero; an unknown input is an error, never ignored.
-* **Explainable.** `--explain` shows, for each line, the formula and the names it read.
-* **Rule packs.** Tax and contribution rules live as data in [swift_tax_rules](../swift_tax_rules), each
-  with its source, a `verified` flag and its own tests, and plug into a structure.
+* **Explainable.** `--explain` shows each line's source and the names its formula or condition read.
+* **Rule packs.** Tax and contribution rules can live as data in the companion [swift_tax_rules](../swift_tax_rules)
+  repository, with source information, a `verified` flag and test cases, and plug into a structure.
 * **Parallel when you want it** (`parallel` feature, Rayon); off for WebAssembly.
 
 ## Try it
@@ -28,6 +28,8 @@ cargo run -- check-rules ../swift_tax_rules/countries
 
 The demo intentionally leaves E-003's required `base_salary` out. The CLI reports that employee's error
 after calculating the other employees, then exits with status 2 to signal that one result failed.
+
+Kani proof harnesses and their current coverage are documented in [kani/README.md](./kani/README.md).
 
 ## Layout
 
@@ -60,7 +62,7 @@ See [docs/data-format.md](./docs/data-format.md) and [docs/design.md](./docs/des
 0.1 ran every rule with `f64` (and rewrote whole numbers in the expression text with a regex to make CEL
 accept them), let a rule see only `gross`, had no way for one deduction to use another, and did not build
 (two packages shared a name). 0.2 replaces the rule engines with the exact-decimal language, so Rhai rules
-are no longer accepted; the Python bindings of 0.1 were stubs and are gone until they are needed.
+are no longer accepted. Python bindings remain unimplemented; `bindings/` contains planning notes only.
 
 ## License
 

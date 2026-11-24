@@ -52,8 +52,21 @@ fn values_lists_maps_and_members() -> Test {
     assert_eq!(run("'a' in {'a': 1}", &[])?, Value::Bool(true));
     assert_eq!(run("'ab' + \"c\"", &[])?, Value::Str("abc".into()));
     assert!(run("[1][5]", &[]).is_err());
+    assert!(run("[1, 2][1.9]", &[]).is_err(), "fractional indexes must not truncate");
+    assert!(run("[1, 2][-0.5]", &[]).is_err(), "negative fractional indexes must not become zero");
+    assert!(run("[1, 2][-1]", &[]).is_err(), "negative indexes are invalid");
     assert!(run("x", &[]).is_err(), "an unknown name is an error, never zero");
     assert_eq!(run("3.5.floor", &[]).is_err(), true, "a number has no members");
+    Ok(())
+}
+
+#[test]
+fn function_call_constraints_check_arity_and_literal_string_arguments() -> Test {
+    assert!(compile("total(\"earning\")")?.calls_match_literals("total", 1, &[0]));
+    assert!(!compile("total(tag)")?.calls_match_literals("total", 1, &[0]));
+    assert!(!compile("total()")?.calls_match_literals("total", 1, &[0]));
+    assert!(!compile("total(\"earning\", tag)")?.calls_match_literals("total", 1, &[0]));
+    assert!(compile("other(tag)")?.calls_match_literals("total", 1, &[0]));
     Ok(())
 }
 

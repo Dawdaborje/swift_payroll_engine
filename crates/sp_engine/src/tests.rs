@@ -99,6 +99,50 @@ fn the_calculation_order_follows_the_dependencies_not_the_writing() -> Test {
     Ok(())
 }
 
+#[test]
+fn component_rounding_cannot_exceed_the_supported_precision() -> Test {
+    let structure: Structure = serde_json::from_value(json!({
+        "id": "s", "version": "1", "currency": "GMD", "components": [
+            { "id": "base", "label": "Base", "kind": "earning", "amount": 1, "round": { "digits": 9 } }
+        ]
+    }))?;
+    assert!(Compiled::new(&structure).is_err());
+    Ok(())
+}
+
+#[test]
+fn total_requires_a_literal_tag_and_orders_all_tag_members_first() -> Test {
+    let invalid: Structure = serde_json::from_value(json!({
+        "id": "s", "version": "1", "currency": "GMD",
+        "inputs": [{ "name": "salary" }, { "name": "group", "default": "earning" }],
+        "components": [
+            { "id": "deduction", "label": "Dynamic total", "kind": "deduction", "formula": "total(group)" },
+            { "id": "base", "label": "Base", "kind": "earning", "input": "salary" }
+        ]
+    }))?;
+    let error = match Compiled::new(&invalid) {
+        Ok(_) => return Err("a non-literal total tag must be rejected".into()),
+        Err(error) => error,
+    };
+    assert!(error.to_string().contains("literal tag string"));
+
+    let valid: Structure = serde_json::from_value(json!({
+        "id": "s", "version": "1", "currency": "GMD",
+        "inputs": [{ "name": "salary" }],
+        "components": [
+            { "id": "deduction", "label": "All earnings", "kind": "deduction", "formula": "total(\"earning\")" },
+            { "id": "base", "label": "Base", "kind": "earning", "input": "salary" }
+        ]
+    }))?;
+    let compiled = Compiled::new(&valid)?;
+    assert_eq!(compiled.calculation_order(), ["base", "deduction"]);
+    let slip = compiled.run(&person(json!({ "salary": 100 }))?, false)?;
+    assert_eq!(slip.lines[0].amount.to_string(), "100.00");
+    assert_eq!(slip.lines[1].amount.to_string(), "100.00");
+    assert_eq!(slip.net.to_string(), "0.00");
+    Ok(())
+}
+
 fn refused(structure: serde_json::Value) -> Result<String, Box<dyn std::error::Error>> {
     let structure: Structure = serde_json::from_value(structure)?;
     match Compiled::new(&structure) {
@@ -221,6 +265,7 @@ fn a_rule_pack_runs_its_own_tests() -> Test {
     assert_eq!(results.len(), 2);
     assert!(results.iter().all(|(_, r)| r.is_ok()), "{results:?}");
     assert!(pack.in_force_on("2025-06-01") && !pack.in_force_on("2024-12-31"));
+    assert!(!pack.in_force_on("2025-02-30"), "an invalid date cannot match a validity range");
     Ok(())
 }
 

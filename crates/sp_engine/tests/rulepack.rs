@@ -65,3 +65,24 @@ fn a_pack_in_a_structure_gives_the_same_answer_as_on_its_own() {
     let alone = p.evaluate(&BTreeMap::from([("income".to_string(), json!(1000)), ("periods".to_string(), json!(12))])).unwrap();
     assert_eq!(slip.lines.iter().find(|l| l.id == "tax").unwrap().amount, alone);
 }
+
+#[test]
+fn validity_dates_must_be_real_and_in_order() {
+    let invalid_day = json!({
+        "id": "xx.demo", "country": "XX", "kind": "income_tax", "currency": "XXX",
+        "valid_from": "2025-02-30", "source": "test", "inputs": [], "tests": []
+    });
+    assert!(RulePack::parse(&invalid_day.to_string(), "1").is_err());
+
+    let reversed = json!({
+        "id": "xx.demo", "country": "XX", "kind": "income_tax", "currency": "XXX",
+        "valid_from": "2025-01-02", "valid_to": "2025-01-01", "source": "test", "inputs": [], "tests": []
+    });
+    assert!(RulePack::parse(&reversed.to_string(), "1").is_err());
+}
+
+#[test]
+fn rule_pack_arguments_reject_unknown_names() {
+    let p = pack(&["rate"], json!({}), "rate");
+    assert!(p.as_component("tax", "Tax", Kind::Deduction, &args(&[("rate", "income"), ("typo", "5")])).is_err());
+}

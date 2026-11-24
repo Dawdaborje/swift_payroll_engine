@@ -81,7 +81,11 @@ pub(crate) fn eval<'a>(node: &'a Node, env: &'a dyn Env, depth: usize) -> Result
             let index = eval(index, env, next)?;
             match (&*container, &*index) {
                 (Value::List(items), Value::Num(n)) => {
-                    let i = usize::try_from(i64::try_from(n.trunc()).map_err(|_| Error::at("a list position is a whole number", *at))?).map_err(|_| Error::at("a list position is not negative", *at))?;
+                    if !n.fract().is_zero() {
+                        return Err(Error::at("a list position is a whole number", *at));
+                    }
+                    let i = usize::try_from(i64::try_from(*n).map_err(|_| Error::at("a list position is a whole number", *at))?)
+                        .map_err(|_| Error::at("a list position is not negative", *at))?;
                     let found = items.get(i).ok_or_else(|| Error::at(format!("there is no item {i}"), *at))?;
                     Ok(Cow::Owned(found.clone()))
                 }

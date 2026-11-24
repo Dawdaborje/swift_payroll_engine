@@ -68,6 +68,29 @@ impl RulePack {
     /// Read a pack from its JSON description and the text of its expression.
     pub fn parse(description: &str, expression: &str) -> Result<Self, String> {
         let info: PackInfo = serde_json::from_str(description).map_err(|e| format!("the description: {e}"))?;
+        if !valid_date(&info.valid_from) {
+            return Err(format!("{}: `valid_from` must be a real YYYY-MM-DD date", info.id));
+        }
+        if let Some(valid_to) = &info.valid_to {
+            if !valid_date(valid_to) {
+                return Err(format!("{}: `valid_to` must be a real YYYY-MM-DD date", info.id));
+            }
+            if valid_to < &info.valid_from {
+                return Err(format!("{}: `valid_to` must not be before `valid_from`", info.id));
+            }
+        }
+        if info.rounding.digits > 8 {
+            return Err(format!("{}: rounding keeps at most 8 digits", info.id));
+        }
+        let mut input_names = std::collections::BTreeSet::new();
+        for name in &info.inputs {
+            if !input_names.insert(name) {
+                return Err(format!("{}: input `{name}` is declared more than once", info.id));
+            }
+            if info.constants.contains_key(name) {
+                return Err(format!("{}: `{name}` cannot be both an input and a constant", info.id));
+            }
+        }
         if expression.lines().all(|l| l.trim().is_empty() || l.trim_start().starts_with("//")) {
             return Err(format!("{}: the expression is empty", info.id));
         }
@@ -86,7 +109,7 @@ impl RulePack {
 
     /// Whether the rule is in force on a day (`YYYY-MM-DD`; text order is date order).
     pub fn in_force_on(&self, day: &str) -> bool {
-        self.info.valid_from.as_str() <= day && self.info.valid_to.as_deref().is_none_or(|to| day <= to)
+        valid_date(day) && self.info.valid_from.as_str() <= day && self.info.valid_to.as_deref().is_none_or(|to| day <= to)
     }
 
     pub fn evaluate(&self, inputs: &BTreeMap<String, Json>) -> Result<Decimal, String> {
@@ -123,6 +146,9 @@ impl RulePack {
     /// `arguments` maps each of the rule's inputs to a formula in the structure, such as
     /// `taxable`, `periods_per_year`. The pack's constants are named `<id with dots as _>_<name>`.
     pub fn as_component(&self, id: &str, label: &str, kind: Kind, arguments: &BTreeMap<String, String>) -> Result<(BTreeMap<String, Json>, Component), String> {
+        if let Some(extra) = arguments.keys().find(|name| !self.info.inputs.contains(name)) {
+            return Err(format!("{}: `{extra}` is not an input of this rule", self.info.id));
+        }
         let prefix = self.info.id.replace(['.', '-'], "_");
         let mut constants = BTreeMap::new();
         let mut replacements: BTreeMap<&str, String> = BTreeMap::new();
@@ -149,6 +175,26 @@ impl RulePack {
             allow_negative: false,
         }))
     }
+}
+
+fn valid_date(date: &str) -> bool {
+    let bytes = date.as_bytes();
+    if bytes.len() != 10 || bytes[4] != b'-' || bytes[7] != b'-' ||
+        !bytes.iter().enumerate().all(|(i, b)| i == 4 || i == 7 || b.is_ascii_digit()) {
+        return false;
+    }
+    let year = date[0..4].parse::<u32>().ok().unwrap_or(0);
+    let month = date[5..7].parse::<u32>().ok().unwrap_or(0);
+    let day = date[8..10].parse::<u32>().ok().unwrap_or(0);
+    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    let max_day = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 if leap => 29,
+        2 => 28,
+        _ => return false,
+    };
+    year > 0 && day >= 1 && day <= max_day
 }
 
 /// Replace names in an expression, all at once and only where the language reads a name: not inside a

@@ -124,6 +124,9 @@ impl Compiled {
                     return Err(bad(format!("`{}` reads the input `{input}`, which the structure does not declare", component.id)));
                 }
             }
+            if component.round.is_some_and(|round| round.digits > 8) {
+                return Err(bad(format!("`{}` rounding keeps at most 8 digits", component.id)));
+            }
             let fixed = match &component.amount {
                 Some(json) => match value_from_json(json).map_err(|e| bad(format!("`{}`: {e}", component.id)))? {
                     Value::Num(n) => Some(n),
@@ -170,6 +173,9 @@ impl Compiled {
         let mut needs_tags: Vec<Vec<usize>> = vec![Vec::new(); items.len()];
         for (index, item) in items.iter().enumerate() {
             for expr in [item.formula.as_ref(), item.when.as_ref()].into_iter().flatten() {
+                if !expr.calls_match_literals("total", 1, &[0]) {
+                    return Err(bad(format!("`{}` calls total without exactly one literal tag string", item.component.id)));
+                }
                 for name in expr.identifiers() {
                     match slots.get(&name) {
                         Some(Slot::Item(other)) => {

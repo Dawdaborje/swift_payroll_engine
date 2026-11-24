@@ -71,6 +71,23 @@ impl Expr {
         collect_calls(&self.root, function, &mut out);
         out
     }
+
+    /// Whether every call to `function` has the requested arity and a string literal at each listed argument
+    /// position. A function with no calls satisfies this constraint.
+    pub fn calls_match_literals(&self, function: &str, arity: usize, string_arguments: &[usize]) -> bool {
+        let mut matches = true;
+        walk(&self.root, &mut |node| {
+            if let Node::Call(name, args, _) = node {
+                if name == function
+                    && (args.len() != arity
+                        || string_arguments.iter().any(|&index| !matches!(args.get(index), Some(Node::Lit(Value::Str(_))))))
+                {
+                    matches = false;
+                }
+            }
+        });
+        matches
+    }
 }
 
 fn walk(node: &Node, visit: &mut dyn FnMut(&Node)) {
