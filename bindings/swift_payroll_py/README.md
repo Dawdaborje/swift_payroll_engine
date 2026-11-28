@@ -1,15 +1,14 @@
-# Swift Payroll — Python bindings
+# swift-payroll-engine (Python)
 
-**Not implemented yet.** This directory is a placeholder for a possible future Python package. The current
-`pyproject.toml` has no build backend, dependencies, or native extension module, so this package cannot be
-installed or imported as `swift_payroll_engine` yet.
-
-Possible future usage (the API is not specified):
+Exact-decimal payslips from a JSON salary structure, using the Rust Swift payroll engine.
 
 ```python
-import swift_payroll_engine
+from swift_payroll_engine import Payroll
 
-results = swift_payroll_engine.calculate(structure, employees)  # one result per employee
+payroll = Payroll(structure)          # dict or JSON text; raises ValueError if invalid
+slip = payroll.run(employee)          # one payslip; raises ValueError on error
+results = payroll.run_all(employees)  # one payslip or {"employee_id", "error"} per employee
 ```
 
-Input schema: [docs/data-format.md](../../docs/data-format.md).
+Input schema: [docs/data-format.md](https://github.com/Dawdaborje/swift_payroll_engine/blob/main/docs/data-format.md).
+More in [bindings/README.md](../README.md).

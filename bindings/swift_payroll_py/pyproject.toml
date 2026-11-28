@@ -1,7 +1,33 @@
+[build-system]
+requires = ["maturin>=1.8,<2"]
+build-backend = "maturin"
+
 [project]
-name = "swift-payroll-py"
-version = "0.1.0"
-description = "Add your description here"
+name = "swift-payroll-engine"
+dynamic = ["version"]
+description = "Python bindings for the Swift payroll engine: exact-decimal payslips from a JSON salary structure"
 readme = "README.md"
-requires-python = ">=3.14"
+license = "MIT"
+authors = [{ name = "Dawda Börje Kujabi" }]
+requires-python = ">=3.9"
 dependencies = []
+keywords = ["payroll", "salary", "tax", "decimal", "payslip"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: 3",
+    "Topic :: Office/Business :: Financial :: Accounting",
+    # Remove when the first release goes to PyPI; until then PyPI refuses any upload carrying it.
+    "Private :: Do Not Upload",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8"]
+
+[project.urls]
+Repository = "https://github.com/Dawdaborje/swift_payroll_engine"
+Documentation = "https://github.com/Dawdaborje/swift_payroll_engine/blob/main/docs/data-format.md"
+
+[tool.maturin]
+module-name = "swift_payroll_engine._native"
+features = ["pyo3/extension-module"]

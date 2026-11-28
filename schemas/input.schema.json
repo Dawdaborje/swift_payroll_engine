@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Dawdaborje/swift_payroll_engine/main/schemas/input.schema.json",
+  "title": "Swift payroll input",
+  "description": "One person's inputs for one pay period: an element of a run's employees, or one line of an NDJSON employee file. Every variable must be declared by the structure.",
+  "type": "object",
+  "required": ["employee_id"],
+  "additionalProperties": false,
+  "properties": {
+    "employee_id": { "type": "string", "description": "Copied onto the payslip and into every error about the person." },
+    "variables": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z_][a-z0-9_]*$" },
+      "default": {},
+      "description": "A value for each input of the structure the person has."
+    }
+  }
+}

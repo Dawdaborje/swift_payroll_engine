@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Dawdaborje/swift_payroll_engine/main/schemas/run.schema.json",
+  "title": "Swift payroll run",
+  "description": "The file given to `swift_payroll_engine --input`: a structure and the people to calculate.",
+  "type": "object",
+  "required": ["structure", "employees"],
+  "additionalProperties": false,
+  "properties": {
+    "structure": { "$ref": "structure.schema.json" },
+    "employees": { "type": "array", "items": { "$ref": "input.schema.json" } }
+  }
+}

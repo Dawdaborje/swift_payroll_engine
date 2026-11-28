@@ -1,0 +1,17 @@
+[package]
+name = "swift_payroll_engine_py"
+# Keep in step with the workspace version (this crate is outside the workspace, see the root Cargo.toml).
+version = "0.3.0"
+edition = "2021"
+license = "MIT"
+publish = false
+
+[lib]
+name = "_native"
+crate-type = ["cdylib"]
+
+[dependencies]
+# exact-json is safe here: this extension is its own build, so it changes serde_json for nothing else.
+swift_payroll_core = { path = "../../crates/swift_payroll_core", features = ["parallel", "exact-json"] }
+serde_json = "1.0.120"
+pyo3 = { version = "0.29", features = ["abi3-py39"] }

@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/Dawdaborje/swift_payroll_engine/main/schemas/payslip.schema.json",
+  "title": "Swift payroll result",
+  "description": "One result of the command line: a payslip, a summary (--summary), an employee error, or a malformed-line error. Amounts are decimal strings.",
+  "oneOf": [
+    { "$ref": "#/$defs/payslip" },
+    { "$ref": "#/$defs/summary" },
+    { "$ref": "#/$defs/error" }
+  ],
+  "$defs": {
+    "amount": { "type": "string", "pattern": "^-?[0-9]+(\\.[0-9]+)?$" },
+    "line": {
+      "type": "object",
+      "required": ["id", "label", "kind", "amount", "applied", "tags"],
+      "additionalProperties": false,
+      "properties": {
+        "id": { "type": "string" },
+        "label": { "type": "string" },
+        "kind": { "enum": ["earning", "deduction", "employer", "info"] },
+        "amount": { "$ref": "#/$defs/amount", "description": "Rounded by the line's own rule." },
+        "applied": { "type": "boolean", "description": "False when the condition was not met (the amount is zero)." },
+        "tags": { "type": "array", "items": { "type": "string" }, "description": "The kind first." },
+        "shortfall": { "$ref": "#/$defs/amount", "description": "Present when not zero: the part of a deduction that could not be taken." },
+        "explain": {
+          "type": "object",
+          "required": ["source", "reads"],
+          "additionalProperties": false,
+          "properties": {
+            "source": { "type": "string", "description": "The formula, `input <name>`, or `fixed amount`." },
+            "reads": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "payslip": {
+      "type": "object",
+      "required": ["employee_id", "structure", "structure_version", "currency", "lines", "gross", "deductions", "net", "employer_cost", "shortfall"],
+      "additionalProperties": false,
+      "properties": {
+        "employee_id": { "type": "string" },
+        "structure": { "type": "string" },
+        "structure_version": { "type": "string" },
+        "currency": { "type": "string" },
+        "lines": { "type": "array", "items": { "$ref": "#/$defs/line" } },
+        "gross": { "$ref": "#/$defs/amount" },
+        "deductions": { "$ref": "#/$defs/amount" },
+        "net": { "$ref": "#/$defs/amount" },
+        "employer_cost": { "$ref": "#/$defs/amount" },
+        "shortfall": { "$ref": "#/$defs/amount" }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["employee_id", "gross", "deductions", "net", "employer_cost", "shortfall"],
+      "additionalProperties": false,
+      "properties": {
+        "employee_id": { "type": "string" },
+        "gross": { "$ref": "#/$defs/amount" },
+        "deductions": { "$ref": "#/$defs/amount" },
+        "net": { "$ref": "#/$defs/amount" },
+        "employer_cost": { "$ref": "#/$defs/amount" },
+        "shortfall": { "$ref": "#/$defs/amount" }
+      }
+    },
+    "error": {
+      "type": "object",
+      "required": ["error"],
+      "additionalProperties": false,
+      "properties": {
+        "employee_id": { "type": "string" },
+        "line": { "type": "integer", "minimum": 1, "description": "In streaming mode, the one-based line number." },
+        "error": { "type": "string" }
+      }
+    }
+  }
+}

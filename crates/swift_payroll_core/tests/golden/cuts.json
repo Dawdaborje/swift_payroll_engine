@@ -1,0 +1,313 @@
+{
+  "notes": [
+    "enough: 5000 covers loan 800 + tax 1500 + social 250 + gym 50 = 2600; net 2400; no shortfall.",
+    "short: gross 1000. Taken by priority: tax (1) 300, social (2) 50, loan (20) 650 of 800, gym (none) 0 of 50.",
+    "Deductions taken 1000, net 0, shortfall 150 + 50 = 200; gross - deductions = net.",
+    "refunded: the refund of 100 counts first (available 1100); tax 300, social 50, loan 750 of 800, gym 0 of 50: taken -100+300+50+750 = 1000, shortfall 100.",
+    "A refund of zero is 0.00, never -0.00."
+  ],
+  "structure": {
+    "id": "cuts",
+    "version": "1",
+    "currency": "XXX",
+    "negative_net": "zero",
+    "inputs": [
+      {
+        "name": "base",
+        "type": "number"
+      },
+      {
+        "name": "refund",
+        "default": 0
+      }
+    ],
+    "components": [
+      {
+        "id": "pay",
+        "label": "Pay",
+        "kind": "earning",
+        "input": "base"
+      },
+      {
+        "id": "loan",
+        "label": "Loan",
+        "kind": "deduction",
+        "amount": "800.00",
+        "priority": 20
+      },
+      {
+        "id": "tax",
+        "label": "Income tax",
+        "kind": "deduction",
+        "formula": "pct(pay, 30)",
+        "priority": 1
+      },
+      {
+        "id": "social",
+        "label": "Social security",
+        "kind": "deduction",
+        "formula": "pct(pay, 5)",
+        "priority": 2
+      },
+      {
+        "id": "gym",
+        "label": "Gym",
+        "kind": "deduction",
+        "amount": 50
+      },
+      {
+        "id": "overpaid",
+        "label": "Refund of an overpaid deduction",
+        "kind": "deduction",
+        "formula": "0 - refund",
+        "allow_negative": true
+      }
+    ]
+  },
+  "employees": [
+    {
+      "employee_id": "enough",
+      "variables": {
+        "base": 5000
+      }
+    },
+    {
+      "employee_id": "short",
+      "variables": {
+        "base": 1000
+      }
+    },
+    {
+      "employee_id": "refunded",
+      "variables": {
+        "base": 1000,
+        "refund": 100
+      }
+    }
+  ],
+  "expected": [
+    {
+      "currency": "XXX",
+      "deductions": "2600.00",
+      "employee_id": "enough",
+      "employer_cost": "0.00",
+      "gross": "5000.00",
+      "lines": [
+        {
+          "amount": "5000.00",
+          "applied": true,
+          "id": "pay",
+          "kind": "earning",
+          "label": "Pay",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "800.00",
+          "applied": true,
+          "id": "loan",
+          "kind": "deduction",
+          "label": "Loan",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "1500.00",
+          "applied": true,
+          "id": "tax",
+          "kind": "deduction",
+          "label": "Income tax",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "250.00",
+          "applied": true,
+          "id": "social",
+          "kind": "deduction",
+          "label": "Social security",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "50.00",
+          "applied": true,
+          "id": "gym",
+          "kind": "deduction",
+          "label": "Gym",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "0.00",
+          "applied": true,
+          "id": "overpaid",
+          "kind": "deduction",
+          "label": "Refund of an overpaid deduction",
+          "tags": [
+            "deduction"
+          ]
+        }
+      ],
+      "net": "2400.00",
+      "shortfall": "0.00",
+      "structure": "cuts",
+      "structure_version": "1"
+    },
+    {
+      "currency": "XXX",
+      "deductions": "1000.00",
+      "employee_id": "short",
+      "employer_cost": "0.00",
+      "gross": "1000.00",
+      "lines": [
+        {
+          "amount": "1000.00",
+          "applied": true,
+          "id": "pay",
+          "kind": "earning",
+          "label": "Pay",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "800.00",
+          "applied": true,
+          "id": "loan",
+          "kind": "deduction",
+          "label": "Loan",
+          "shortfall": "150.00",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "300.00",
+          "applied": true,
+          "id": "tax",
+          "kind": "deduction",
+          "label": "Income tax",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "50.00",
+          "applied": true,
+          "id": "social",
+          "kind": "deduction",
+          "label": "Social security",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "50.00",
+          "applied": true,
+          "id": "gym",
+          "kind": "deduction",
+          "label": "Gym",
+          "shortfall": "50.00",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "0.00",
+          "applied": true,
+          "id": "overpaid",
+          "kind": "deduction",
+          "label": "Refund of an overpaid deduction",
+          "tags": [
+            "deduction"
+          ]
+        }
+      ],
+      "net": "0.00",
+      "shortfall": "200.00",
+      "structure": "cuts",
+      "structure_version": "1"
+    },
+    {
+      "currency": "XXX",
+      "deductions": "1000.00",
+      "employee_id": "refunded",
+      "employer_cost": "0.00",
+      "gross": "1000.00",
+      "lines": [
+        {
+          "amount": "1000.00",
+          "applied": true,
+          "id": "pay",
+          "kind": "earning",
+          "label": "Pay",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "800.00",
+          "applied": true,
+          "id": "loan",
+          "kind": "deduction",
+          "label": "Loan",
+          "shortfall": "50.00",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "300.00",
+          "applied": true,
+          "id": "tax",
+          "kind": "deduction",
+          "label": "Income tax",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "50.00",
+          "applied": true,
+          "id": "social",
+          "kind": "deduction",
+          "label": "Social security",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "50.00",
+          "applied": true,
+          "id": "gym",
+          "kind": "deduction",
+          "label": "Gym",
+          "shortfall": "50.00",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "-100.00",
+          "applied": true,
+          "id": "overpaid",
+          "kind": "deduction",
+          "label": "Refund of an overpaid deduction",
+          "tags": [
+            "deduction"
+          ]
+        }
+      ],
+      "net": "0.00",
+      "shortfall": "100.00",
+      "structure": "cuts",
+      "structure_version": "1"
+    }
+  ]
+}

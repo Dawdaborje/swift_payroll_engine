@@ -1,0 +1,392 @@
+{
+  "notes": [
+    "2.675 to 2 digits: half up 2.68, half even 2.68 (7 is odd), down 2.67, up 2.68; to 0 digits 3.",
+    "-2.665: half up -2.67, half even -2.66 (6 is even), down (towards zero) -2.66, up (away from zero) -2.67; to 0 digits -3.",
+    "100 / 3 three times: 33.33 each; gross is the sum of the rounded lines, 99.99, and the lost cent is not invented back."
+  ],
+  "structure": {
+    "id": "rounding",
+    "version": "1",
+    "currency": "XXX",
+    "negative_net": "allow",
+    "inputs": [
+      {
+        "name": "x",
+        "type": "number"
+      }
+    ],
+    "components": [
+      {
+        "id": "half_up",
+        "label": "Half up",
+        "kind": "info",
+        "formula": "x",
+        "round": {
+          "digits": 2,
+          "mode": "half_up"
+        }
+      },
+      {
+        "id": "half_even",
+        "label": "Half even",
+        "kind": "info",
+        "formula": "x",
+        "round": {
+          "digits": 2,
+          "mode": "half_even"
+        }
+      },
+      {
+        "id": "down",
+        "label": "Down",
+        "kind": "info",
+        "formula": "x",
+        "round": {
+          "digits": 2,
+          "mode": "down"
+        }
+      },
+      {
+        "id": "up",
+        "label": "Up",
+        "kind": "info",
+        "formula": "x",
+        "round": {
+          "digits": 2,
+          "mode": "up"
+        }
+      },
+      {
+        "id": "whole",
+        "label": "Whole units",
+        "kind": "info",
+        "formula": "x",
+        "round": {
+          "digits": 0
+        }
+      },
+      {
+        "id": "thirds",
+        "label": "Three thirds",
+        "kind": "earning",
+        "formula": "x / 3",
+        "allow_negative": true
+      },
+      {
+        "id": "thirds_b",
+        "label": "Three thirds",
+        "kind": "earning",
+        "formula": "x / 3",
+        "allow_negative": true
+      },
+      {
+        "id": "thirds_c",
+        "label": "Three thirds",
+        "kind": "earning",
+        "formula": "x / 3",
+        "allow_negative": true
+      }
+    ]
+  },
+  "employees": [
+    {
+      "employee_id": "p",
+      "variables": {
+        "x": "2.675"
+      }
+    },
+    {
+      "employee_id": "n",
+      "variables": {
+        "x": "-2.665"
+      }
+    },
+    {
+      "employee_id": "t",
+      "variables": {
+        "x": "100"
+      }
+    }
+  ],
+  "expected": [
+    {
+      "currency": "XXX",
+      "deductions": "0.00",
+      "employee_id": "p",
+      "employer_cost": "0.00",
+      "gross": "2.67",
+      "lines": [
+        {
+          "amount": "2.68",
+          "applied": true,
+          "id": "half_up",
+          "kind": "info",
+          "label": "Half up",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "2.68",
+          "applied": true,
+          "id": "half_even",
+          "kind": "info",
+          "label": "Half even",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "2.67",
+          "applied": true,
+          "id": "down",
+          "kind": "info",
+          "label": "Down",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "2.68",
+          "applied": true,
+          "id": "up",
+          "kind": "info",
+          "label": "Up",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "3",
+          "applied": true,
+          "id": "whole",
+          "kind": "info",
+          "label": "Whole units",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "0.89",
+          "applied": true,
+          "id": "thirds",
+          "kind": "earning",
+          "label": "Three thirds",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "0.89",
+          "applied": true,
+          "id": "thirds_b",
+          "kind": "earning",
+          "label": "Three thirds",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "0.89",
+          "applied": true,
+          "id": "thirds_c",
+          "kind": "earning",
+          "label": "Three thirds",
+          "tags": [
+            "earning"
+          ]
+        }
+      ],
+      "net": "2.67",
+      "shortfall": "0.00",
+      "structure": "rounding",
+      "structure_version": "1"
+    },
+    {
+      "currency": "XXX",
+      "deductions": "0.00",
+      "employee_id": "n",
+      "employer_cost": "0.00",
+      "gross": "-2.67",
+      "lines": [
+        {
+          "amount": "-2.67",
+          "applied": true,
+          "id": "half_up",
+          "kind": "info",
+          "label": "Half up",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "-2.66",
+          "applied": true,
+          "id": "half_even",
+          "kind": "info",
+          "label": "Half even",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "-2.66",
+          "applied": true,
+          "id": "down",
+          "kind": "info",
+          "label": "Down",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "-2.67",
+          "applied": true,
+          "id": "up",
+          "kind": "info",
+          "label": "Up",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "-3",
+          "applied": true,
+          "id": "whole",
+          "kind": "info",
+          "label": "Whole units",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "-0.89",
+          "applied": true,
+          "id": "thirds",
+          "kind": "earning",
+          "label": "Three thirds",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "-0.89",
+          "applied": true,
+          "id": "thirds_b",
+          "kind": "earning",
+          "label": "Three thirds",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "-0.89",
+          "applied": true,
+          "id": "thirds_c",
+          "kind": "earning",
+          "label": "Three thirds",
+          "tags": [
+            "earning"
+          ]
+        }
+      ],
+      "net": "-2.67",
+      "shortfall": "0.00",
+      "structure": "rounding",
+      "structure_version": "1"
+    },
+    {
+      "currency": "XXX",
+      "deductions": "0.00",
+      "employee_id": "t",
+      "employer_cost": "0.00",
+      "gross": "99.99",
+      "lines": [
+        {
+          "amount": "100.00",
+          "applied": true,
+          "id": "half_up",
+          "kind": "info",
+          "label": "Half up",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "100.00",
+          "applied": true,
+          "id": "half_even",
+          "kind": "info",
+          "label": "Half even",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "100.00",
+          "applied": true,
+          "id": "down",
+          "kind": "info",
+          "label": "Down",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "100.00",
+          "applied": true,
+          "id": "up",
+          "kind": "info",
+          "label": "Up",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "100",
+          "applied": true,
+          "id": "whole",
+          "kind": "info",
+          "label": "Whole units",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "33.33",
+          "applied": true,
+          "id": "thirds",
+          "kind": "earning",
+          "label": "Three thirds",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "33.33",
+          "applied": true,
+          "id": "thirds_b",
+          "kind": "earning",
+          "label": "Three thirds",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "33.33",
+          "applied": true,
+          "id": "thirds_c",
+          "kind": "earning",
+          "label": "Three thirds",
+          "tags": [
+            "earning"
+          ]
+        }
+      ],
+      "net": "99.99",
+      "shortfall": "0.00",
+      "structure": "rounding",
+      "structure_version": "1"
+    }
+  ]
+}

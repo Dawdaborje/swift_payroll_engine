@@ -27,3 +27,10 @@ target
 
 history.txt/*
 history.txt
+# Binding build output
+.venv/
+.pytest_cache/
+__pycache__/
+*.so
+bindings/swift_payroll_js/pkg/
+*.tgz
