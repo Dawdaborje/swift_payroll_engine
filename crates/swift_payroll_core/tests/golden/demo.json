@@ -1,0 +1,348 @@
+{
+  "notes": [
+    "Worked by hand. E-001: base 50000, transport 2000, housing 20% = 10000, gross 62000. Social 5% of 50000 = 2500.",
+    "Taxable 62000 - 2500 = 59500; a year 714000: 0 on 288000, 10% of 288000 = 28800, 20% of 138000 = 27600; 56400 / 12 = 4700.",
+    "Deductions 2500 + 4700 = 7200, net 54800, employer 10% of 50000 = 5000.",
+    "E-002: base 120000.50, housing 24000.10, gross 144000.60; social 6000.025 -> 6000.03 (half up); taxable 138000.57.",
+    "A year 1656006.84: 28800 + 20% of 1080006.84 = 216001.368, total 244801.368 / 12 = 20400.114 -> 20400.11.",
+    "Deductions 6000.03 + 20400.11 + 1500 = 27900.14, net 116100.46, employer 12000.05.",
+    "E-003 has no base_salary: an error, never zero."
+  ],
+  "structure": {
+    "id": "demo",
+    "version": "1",
+    "currency": "GMD",
+    "inputs": [
+      {
+        "name": "base_salary"
+      },
+      {
+        "name": "transport",
+        "default": 0
+      },
+      {
+        "name": "periods_per_year",
+        "default": 12
+      },
+      {
+        "name": "loan_amount",
+        "default": 0
+      }
+    ],
+    "constants": {
+      "paye_table": [
+        [
+          288000,
+          0
+        ],
+        [
+          576000,
+          0.1
+        ],
+        [
+          null,
+          0.2
+        ]
+      ]
+    },
+    "components": [
+      {
+        "id": "base",
+        "label": "Base salary",
+        "kind": "earning",
+        "input": "base_salary",
+        "tags": [
+          "pensionable"
+        ]
+      },
+      {
+        "id": "transport_allowance",
+        "label": "Transport",
+        "kind": "earning",
+        "input": "transport"
+      },
+      {
+        "id": "housing",
+        "label": "Housing (20% of base)",
+        "kind": "earning",
+        "formula": "pct(base, 20)"
+      },
+      {
+        "id": "gross",
+        "label": "Gross",
+        "kind": "info",
+        "formula": "total(\"earning\")"
+      },
+      {
+        "id": "social",
+        "label": "Social security (5% of pensionable pay)",
+        "kind": "deduction",
+        "tags": [
+          "pre_tax"
+        ],
+        "formula": "pct(total(\"pensionable\"), 5)"
+      },
+      {
+        "id": "taxable",
+        "label": "Taxable pay",
+        "kind": "info",
+        "formula": "gross - total(\"pre_tax\")"
+      },
+      {
+        "id": "paye",
+        "label": "Income tax",
+        "kind": "deduction",
+        "formula": "bracket(taxable * periods_per_year, paye_table) / periods_per_year"
+      },
+      {
+        "id": "loan",
+        "label": "Loan repayment",
+        "kind": "deduction",
+        "input": "loan_amount",
+        "when": "loan_amount > 0"
+      },
+      {
+        "id": "employer_social",
+        "label": "Employer social security (10%)",
+        "kind": "employer",
+        "formula": "pct(total(\"pensionable\"), 10)"
+      }
+    ]
+  },
+  "employees": [
+    {
+      "employee_id": "E-001",
+      "variables": {
+        "base_salary": 50000,
+        "transport": 2000
+      }
+    },
+    {
+      "employee_id": "E-002",
+      "variables": {
+        "base_salary": 120000.5,
+        "loan_amount": 1500
+      }
+    },
+    {
+      "employee_id": "E-003",
+      "variables": {}
+    }
+  ],
+  "expected": [
+    {
+      "currency": "GMD",
+      "deductions": "7200.00",
+      "employee_id": "E-001",
+      "employer_cost": "5000.00",
+      "gross": "62000.00",
+      "lines": [
+        {
+          "amount": "50000.00",
+          "applied": true,
+          "id": "base",
+          "kind": "earning",
+          "label": "Base salary",
+          "tags": [
+            "earning",
+            "pensionable"
+          ]
+        },
+        {
+          "amount": "2000.00",
+          "applied": true,
+          "id": "transport_allowance",
+          "kind": "earning",
+          "label": "Transport",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "10000.00",
+          "applied": true,
+          "id": "housing",
+          "kind": "earning",
+          "label": "Housing (20% of base)",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "62000.00",
+          "applied": true,
+          "id": "gross",
+          "kind": "info",
+          "label": "Gross",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "2500.00",
+          "applied": true,
+          "id": "social",
+          "kind": "deduction",
+          "label": "Social security (5% of pensionable pay)",
+          "tags": [
+            "deduction",
+            "pre_tax"
+          ]
+        },
+        {
+          "amount": "59500.00",
+          "applied": true,
+          "id": "taxable",
+          "kind": "info",
+          "label": "Taxable pay",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "4700.00",
+          "applied": true,
+          "id": "paye",
+          "kind": "deduction",
+          "label": "Income tax",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "0.00",
+          "applied": false,
+          "id": "loan",
+          "kind": "deduction",
+          "label": "Loan repayment",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "5000.00",
+          "applied": true,
+          "id": "employer_social",
+          "kind": "employer",
+          "label": "Employer social security (10%)",
+          "tags": [
+            "employer"
+          ]
+        }
+      ],
+      "net": "54800.00",
+      "shortfall": "0.00",
+      "structure": "demo",
+      "structure_version": "1"
+    },
+    {
+      "currency": "GMD",
+      "deductions": "27900.14",
+      "employee_id": "E-002",
+      "employer_cost": "12000.05",
+      "gross": "144000.60",
+      "lines": [
+        {
+          "amount": "120000.50",
+          "applied": true,
+          "id": "base",
+          "kind": "earning",
+          "label": "Base salary",
+          "tags": [
+            "earning",
+            "pensionable"
+          ]
+        },
+        {
+          "amount": "0.00",
+          "applied": true,
+          "id": "transport_allowance",
+          "kind": "earning",
+          "label": "Transport",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "24000.10",
+          "applied": true,
+          "id": "housing",
+          "kind": "earning",
+          "label": "Housing (20% of base)",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "144000.60",
+          "applied": true,
+          "id": "gross",
+          "kind": "info",
+          "label": "Gross",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "6000.03",
+          "applied": true,
+          "id": "social",
+          "kind": "deduction",
+          "label": "Social security (5% of pensionable pay)",
+          "tags": [
+            "deduction",
+            "pre_tax"
+          ]
+        },
+        {
+          "amount": "138000.57",
+          "applied": true,
+          "id": "taxable",
+          "kind": "info",
+          "label": "Taxable pay",
+          "tags": [
+            "info"
+          ]
+        },
+        {
+          "amount": "20400.11",
+          "applied": true,
+          "id": "paye",
+          "kind": "deduction",
+          "label": "Income tax",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "1500.00",
+          "applied": true,
+          "id": "loan",
+          "kind": "deduction",
+          "label": "Loan repayment",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "12000.05",
+          "applied": true,
+          "id": "employer_social",
+          "kind": "employer",
+          "label": "Employer social security (10%)",
+          "tags": [
+            "employer"
+          ]
+        }
+      ],
+      "net": "116100.46",
+      "shortfall": "0.00",
+      "structure": "demo",
+      "structure_version": "1"
+    },
+    {
+      "employee_id": "E-003",
+      "error": "E-003: `base_salary` is missing"
+    }
+  ]
+}

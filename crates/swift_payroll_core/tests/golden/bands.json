@@ -1,0 +1,310 @@
+{
+  "notes": [
+    "Bands: 0% to 24000, 5% to 48000, 10% to 72000, 20% above.",
+    "0 -> 0. 24000 (at the limit, in band one) -> 0, marginal 0. 24000.01 -> 0.0005 -> 0.00, marginal 0.05.",
+    "48000 -> 5% of 24000 = 1200, marginal 0.05 (the limit belongs to its band). 100000 -> 1200 + 2400 + 20% of 28000 = 5600: 9200."
+  ],
+  "structure": {
+    "id": "bands",
+    "version": "1",
+    "currency": "XXX",
+    "inputs": [
+      {
+        "name": "annual",
+        "type": "number"
+      }
+    ],
+    "constants": {
+      "bands": [
+        [
+          24000,
+          0
+        ],
+        [
+          48000,
+          0.05
+        ],
+        [
+          72000,
+          0.1
+        ],
+        [
+          null,
+          0.2
+        ]
+      ]
+    },
+    "components": [
+      {
+        "id": "pay",
+        "label": "Annual pay",
+        "kind": "earning",
+        "input": "annual"
+      },
+      {
+        "id": "tax",
+        "label": "Tax",
+        "kind": "deduction",
+        "formula": "bracket(annual, bands)"
+      },
+      {
+        "id": "marginal",
+        "label": "Marginal rate",
+        "kind": "info",
+        "formula": "rate_at(annual, bands)",
+        "round": {
+          "digits": 4
+        }
+      }
+    ]
+  },
+  "employees": [
+    {
+      "employee_id": "zero",
+      "variables": {
+        "annual": 0
+      }
+    },
+    {
+      "employee_id": "at_first_limit",
+      "variables": {
+        "annual": 24000
+      }
+    },
+    {
+      "employee_id": "cent_above",
+      "variables": {
+        "annual": "24000.01"
+      }
+    },
+    {
+      "employee_id": "at_second_limit",
+      "variables": {
+        "annual": 48000
+      }
+    },
+    {
+      "employee_id": "top_band",
+      "variables": {
+        "annual": 100000
+      }
+    }
+  ],
+  "expected": [
+    {
+      "currency": "XXX",
+      "deductions": "0.00",
+      "employee_id": "zero",
+      "employer_cost": "0.00",
+      "gross": "0.00",
+      "lines": [
+        {
+          "amount": "0.00",
+          "applied": true,
+          "id": "pay",
+          "kind": "earning",
+          "label": "Annual pay",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "0.00",
+          "applied": true,
+          "id": "tax",
+          "kind": "deduction",
+          "label": "Tax",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "0.0000",
+          "applied": true,
+          "id": "marginal",
+          "kind": "info",
+          "label": "Marginal rate",
+          "tags": [
+            "info"
+          ]
+        }
+      ],
+      "net": "0.00",
+      "shortfall": "0.00",
+      "structure": "bands",
+      "structure_version": "1"
+    },
+    {
+      "currency": "XXX",
+      "deductions": "0.00",
+      "employee_id": "at_first_limit",
+      "employer_cost": "0.00",
+      "gross": "24000.00",
+      "lines": [
+        {
+          "amount": "24000.00",
+          "applied": true,
+          "id": "pay",
+          "kind": "earning",
+          "label": "Annual pay",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "0.00",
+          "applied": true,
+          "id": "tax",
+          "kind": "deduction",
+          "label": "Tax",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "0.0000",
+          "applied": true,
+          "id": "marginal",
+          "kind": "info",
+          "label": "Marginal rate",
+          "tags": [
+            "info"
+          ]
+        }
+      ],
+      "net": "24000.00",
+      "shortfall": "0.00",
+      "structure": "bands",
+      "structure_version": "1"
+    },
+    {
+      "currency": "XXX",
+      "deductions": "0.00",
+      "employee_id": "cent_above",
+      "employer_cost": "0.00",
+      "gross": "24000.01",
+      "lines": [
+        {
+          "amount": "24000.01",
+          "applied": true,
+          "id": "pay",
+          "kind": "earning",
+          "label": "Annual pay",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "0.00",
+          "applied": true,
+          "id": "tax",
+          "kind": "deduction",
+          "label": "Tax",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "0.0500",
+          "applied": true,
+          "id": "marginal",
+          "kind": "info",
+          "label": "Marginal rate",
+          "tags": [
+            "info"
+          ]
+        }
+      ],
+      "net": "24000.01",
+      "shortfall": "0.00",
+      "structure": "bands",
+      "structure_version": "1"
+    },
+    {
+      "currency": "XXX",
+      "deductions": "1200.00",
+      "employee_id": "at_second_limit",
+      "employer_cost": "0.00",
+      "gross": "48000.00",
+      "lines": [
+        {
+          "amount": "48000.00",
+          "applied": true,
+          "id": "pay",
+          "kind": "earning",
+          "label": "Annual pay",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "1200.00",
+          "applied": true,
+          "id": "tax",
+          "kind": "deduction",
+          "label": "Tax",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "0.0500",
+          "applied": true,
+          "id": "marginal",
+          "kind": "info",
+          "label": "Marginal rate",
+          "tags": [
+            "info"
+          ]
+        }
+      ],
+      "net": "46800.00",
+      "shortfall": "0.00",
+      "structure": "bands",
+      "structure_version": "1"
+    },
+    {
+      "currency": "XXX",
+      "deductions": "9200.00",
+      "employee_id": "top_band",
+      "employer_cost": "0.00",
+      "gross": "100000.00",
+      "lines": [
+        {
+          "amount": "100000.00",
+          "applied": true,
+          "id": "pay",
+          "kind": "earning",
+          "label": "Annual pay",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "9200.00",
+          "applied": true,
+          "id": "tax",
+          "kind": "deduction",
+          "label": "Tax",
+          "tags": [
+            "deduction"
+          ]
+        },
+        {
+          "amount": "0.2000",
+          "applied": true,
+          "id": "marginal",
+          "kind": "info",
+          "label": "Marginal rate",
+          "tags": [
+            "info"
+          ]
+        }
+      ],
+      "net": "90800.00",
+      "shortfall": "0.00",
+      "structure": "bands",
+      "structure_version": "1"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+[package]
+name = "swift_payroll_expr"
+description = "A small, exact-decimal expression language with CEL-style syntax, for payroll and tax rules"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+documentation = "https://docs.rs/swift_payroll_expr"
+readme = "README.md"
+keywords = ["payroll", "decimal", "expression", "cel", "tax"]
+categories = ["finance", "parser-implementations", "mathematics"]
+
+[lints]
+workspace = true
+
+[dependencies]
+rust_decimal.workspace = true
+
+[dev-dependencies]
+proptest.workspace = true

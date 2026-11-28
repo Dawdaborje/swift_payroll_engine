@@ -1,0 +1,40 @@
+[package]
+name = "swift_payroll_core"
+description = "Payroll calculation kernel: a salary structure of components with exact-decimal formulas, in dependency order"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+documentation = "https://docs.rs/swift_payroll_core"
+readme = "README.md"
+keywords = ["payroll", "salary", "tax", "decimal", "payslip"]
+categories = ["finance"]
+
+[lints]
+workspace = true
+
+[features]
+default = ["parallel"]
+# `run_all` and `for_each` calculate people on Rayon's thread pool. Off for WebAssembly.
+parallel = ["dep:rayon"]
+# JSON numbers are read as the exact text they were written in (serde_json's `arbitrary_precision`).
+# Off by default because it changes serde_json for the *whole* build it is part of (it breaks
+# `#[serde(flatten)]` and untagged enums holding numbers in unrelated crates). Without it, a JSON number
+# goes through an f64 first and is exact up to 15 significant digits; pass larger amounts as decimal text
+# (`"123456789012345.678"`), which is always read exactly.
+exact-json = ["serde_json/arbitrary_precision"]
+
+[dependencies]
+swift_payroll_expr.workspace = true
+rust_decimal = { workspace = true, features = ["serde-str"] }
+serde.workspace = true
+serde_json.workspace = true
+rayon = { version = "1.10", optional = true }
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dev-dependencies]
+proptest.workspace = true

@@ -1,18 +1,32 @@
 [workspace]
 resolver = "2"
-members = ["crates/sp_expr", "crates/sp_engine", "swift_payroll_engine"]
+members = ["crates/swift_payroll_expr", "crates/swift_payroll_core", "swift_payroll_engine"]
+# Outside the workspace: cargo-fuzz targets (nightly, see fuzz/README.md) and the language bindings
+# (built by maturin and wasm-pack, with their own lockfiles; see bindings/README.md).
+exclude = ["fuzz", "bindings"]
 
 [workspace.package]
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
+rust-version = "1.85"
 license = "MIT"
+authors = ["Dawda Börje Kujabi"]
+repository = "https://github.com/Dawdaborje/swift_payroll_engine"
 
 [workspace.dependencies]
-sp_expr = { path = "./crates/sp_expr" }
-sp_engine = { path = "./crates/sp_engine", default-features = false }
-rust_decimal = { version = "1", default-features = false, features = ["std", "maths"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+# A path *and* a version: the path is used inside this workspace, the version when published to crates.io.
+swift_payroll_expr = { path = "./crates/swift_payroll_expr", version = "=0.3.0" }
+swift_payroll_core = { path = "./crates/swift_payroll_core", version = "=0.3.0", default-features = false }
+# The lowest rust_decimal whose arithmetic the golden payslip tests were recorded with.
+rust_decimal = { version = "1.43", default-features = false, features = ["std", "maths"] }
+serde = { version = "1.0.200", features = ["derive"] }
+serde_json = "1.0.120"
+# Tests only: property tests that shrink a failure to its smallest case.
+proptest = { version = "1.5", default-features = false, features = ["std"] }
+
+[workspace.lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(kani)'] }
+missing_docs = "warn"
 
 [profile.release]
 opt-level = 3

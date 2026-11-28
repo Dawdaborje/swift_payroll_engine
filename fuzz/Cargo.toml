@@ -1,0 +1,46 @@
+# Coverage-guided fuzz targets for cargo-fuzz (libFuzzer). Not part of the main workspace and never published.
+#
+#   cargo install cargo-fuzz
+#   cargo +nightly fuzz run expr -- -max_total_time=300
+#
+# The seeded fuzzers in each crate's tests/fuzz.rs run in ordinary `cargo test`; these find what they miss.
+[package]
+name = "swift_payroll_fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+serde = { version = "1.0.200", features = ["derive"] }
+serde_json = "1.0.120"
+swift_payroll_expr = { path = "../crates/swift_payroll_expr" }
+swift_payroll_core = { path = "../crates/swift_payroll_core", default-features = false }
+
+# A workspace of its own, so the main workspace (and its Cargo.lock) does not include it.
+[workspace]
+members = ["."]
+
+[[bin]]
+name = "expr"
+path = "fuzz_targets/expr.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "structure"
+path = "fuzz_targets/structure.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "rule_pack"
+path = "fuzz_targets/rule_pack.rs"
+test = false
+doc = false
+bench = false

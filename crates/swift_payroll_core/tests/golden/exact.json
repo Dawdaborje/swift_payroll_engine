@@ -1,0 +1,91 @@
+{
+  "notes": [
+    "precision exact: 2100 * 15 / 21 = 1500 exactly; pension 7.5% = 112.50.",
+    "3000 * 15 / 21 = 2142.857142... does not end: an error with exact precision, never a rounded figure."
+  ],
+  "structure": {
+    "id": "exact",
+    "version": "1",
+    "currency": "XXX",
+    "precision": "exact",
+    "inputs": [
+      {
+        "name": "monthly",
+        "type": "number"
+      },
+      {
+        "name": "days",
+        "type": "number"
+      }
+    ],
+    "components": [
+      {
+        "id": "pay",
+        "label": "Pay for days worked",
+        "kind": "earning",
+        "formula": "prorate(monthly, days, 21)"
+      },
+      {
+        "id": "pension",
+        "label": "Pension",
+        "kind": "deduction",
+        "formula": "pct(pay, 7.5)"
+      }
+    ]
+  },
+  "employees": [
+    {
+      "employee_id": "divides",
+      "variables": {
+        "monthly": "2100",
+        "days": 15
+      }
+    },
+    {
+      "employee_id": "does_not",
+      "variables": {
+        "monthly": "3000",
+        "days": 15
+      }
+    }
+  ],
+  "expected": [
+    {
+      "currency": "XXX",
+      "deductions": "112.50",
+      "employee_id": "divides",
+      "employer_cost": "0.00",
+      "gross": "1500.00",
+      "lines": [
+        {
+          "amount": "1500.00",
+          "applied": true,
+          "id": "pay",
+          "kind": "earning",
+          "label": "Pay for days worked",
+          "tags": [
+            "earning"
+          ]
+        },
+        {
+          "amount": "112.50",
+          "applied": true,
+          "id": "pension",
+          "kind": "deduction",
+          "label": "Pension",
+          "tags": [
+            "deduction"
+          ]
+        }
+      ],
+      "net": "1387.50",
+      "shortfall": "0.00",
+      "structure": "exact",
+      "structure_version": "1"
+    },
+    {
+      "employee_id": "does_not",
+      "error": "does_not: pay: prorate: the result cannot be held exactly (it needs more than 28 decimal places or 28 digits) (at 0)"
+    }
+  ]
+}
