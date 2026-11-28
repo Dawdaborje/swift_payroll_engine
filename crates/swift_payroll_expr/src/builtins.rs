@@ -9,7 +9,7 @@
 //! | `clamp(x, low, high)` | `x` held between `low` and `high`. |
 //! | `between(x, low, high)` | Whether `low <= x <= high`. |
 //! | `pct(x, p)` | `p` percent of `x`: `pct(2500, 5)` is `125`. |
-//! | `prorate(amount, part, whole)` | `amount * part / whole`; `whole` must be above zero. |
+//! | `prorate(amount, part, whole)` | `amount * part / whole`; `whole` above zero, `part` from 0 to `whole`. |
 //! | `bracket(x, table)` | Tax by progressive bands (below). Not rounded. |
 //! | `rate_at(x, table)` | The rate of the band `x` falls in (an upper limit belongs to its own band). |
 //! | `sum(list)` or `sum(a, b, ...)` | The sum. |
@@ -208,7 +208,12 @@ pub(crate) fn call(name: &str, args: &[&Value], precision: Precision) -> Result<
             if whole <= Decimal::ZERO {
                 return Err(Error::invalid("the whole is above zero"));
             }
-            let product = arith::mul(num(args[0])?, num(args[1])?, precision)?;
+            // 31 days of a 30-day period would pay more than the full amount: an error, not a bonus.
+            let part = num(args[1])?;
+            if part.is_sign_negative() && !part.is_zero() || part > whole {
+                return Err(Error::invalid("the part is from zero to the whole (use amount * part / whole to go outside it)"));
+            }
+            let product = arith::mul(num(args[0])?, part, precision)?;
             number(arith::div(product, whole, precision)?)
         }
         "bracket" => {

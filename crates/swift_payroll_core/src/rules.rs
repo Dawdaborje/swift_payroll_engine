@@ -138,6 +138,7 @@ pub struct PackInfo {
 ///
 /// ```
 /// use swift_payroll_core::PackChecks;
+/// // The pay date is required: without `.on(...)` every pack is refused.
 /// let checks = PackChecks::new().currency("GMD").on("2025-06-30");
 /// ```
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -149,10 +150,13 @@ pub struct PackChecks {
     pub pay_date: Option<String>,
     /// Use the pack even though nobody has checked it against the law.
     pub allow_unverified: bool,
+    /// Use the pack without a pay date to check it against.
+    pub any_date: bool,
 }
 
 impl PackChecks {
-    /// No currency or date to check; an unverified pack is refused.
+    /// No currency to check; an unverified pack is refused, and so is every pack until a pay date is given
+    /// with [`on`](Self::on) (a tax table from last year must never run unseen).
     pub fn new() -> Self {
         Self::default()
     }
@@ -171,6 +175,13 @@ impl PackChecks {
     /// The pack must be in force on this day (`YYYY-MM-DD`).
     pub fn on(mut self, pay_date: impl Into<String>) -> Self {
         self.pay_date = Some(pay_date.into());
+        self
+    }
+
+    /// Accept a pack without checking that it is in force on a pay date (for a pack's own tests and
+    /// demonstrations, never for real pay).
+    pub fn any_date(mut self) -> Self {
+        self.any_date = true;
         self
     }
 
@@ -304,13 +315,22 @@ impl RulePack {
                 return Err(fail(RuleErrorKind::Currency, format!("the pack is in {}, the structure in {currency}", self.info.currency)));
             }
         }
-        if let Some(day) = &checks.pay_date {
-            if !valid_date(day) {
-                return Err(fail(RuleErrorKind::NotInForce, format!("`{day}` is not a real YYYY-MM-DD date")));
+        match &checks.pay_date {
+            None if checks.any_date => {}
+            None => {
+                return Err(fail(
+                    RuleErrorKind::NotInForce,
+                    "no pay date to check the pack against: give one with PackChecks::on (PackChecks::any_date is only for tests)".to_string(),
+                ))
             }
-            if !self.in_force_on(day) {
-                let until = self.info.valid_to.as_deref().map_or(String::new(), |to| format!(" to {to}"));
-                return Err(fail(RuleErrorKind::NotInForce, format!("the pack is in force from {}{until}, not on {day}", self.info.valid_from)));
+            Some(day) => {
+                if !valid_date(day) {
+                    return Err(fail(RuleErrorKind::NotInForce, format!("`{day}` is not a real YYYY-MM-DD date")));
+                }
+                if !self.in_force_on(day) {
+                    let until = self.info.valid_to.as_deref().map_or(String::new(), |to| format!(" to {to}"));
+                    return Err(fail(RuleErrorKind::NotInForce, format!("the pack is in force from {}{until}, not on {day}", self.info.valid_from)));
+                }
             }
         }
         Ok(())

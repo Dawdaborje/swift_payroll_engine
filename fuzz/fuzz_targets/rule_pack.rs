@@ -14,5 +14,5 @@ fuzz_target!(|data: &[u8]| {
     let _ = pack.run_tests();
     let _ = pack.in_force_on("2025-06-30");
     let arguments: BTreeMap<String, String> = pack.info.inputs.iter().map(|name| (name.clone(), "1000".to_string())).collect();
-    let _ = pack.as_component("rule", "Rule", Kind::Deduction, &arguments, &PackChecks::new().allow_unverified());
+    let _ = pack.as_component("rule", "Rule", Kind::Deduction, &arguments, &PackChecks::new().allow_unverified().any_date());
 });

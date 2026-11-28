@@ -15,8 +15,20 @@ released together.
 - Python bindings (`swift-payroll-engine` on PyPI, `import swift_payroll_engine`, PyO3 + maturin, one abi3
   wheel for Python 3.9+) and JS/TS bindings (`swift-payroll-engine` on npm, WebAssembly for Node). Both expose
   `Payroll(structure)` with `run`, `run_all` / `runAll` and `warnings`; neither is published yet.
+- `Warning::CurrencyDigits`: rounding to a number of decimal places the currency does not have (JPY to 2, KWD
+  to 2) is reported when the structure is compiled.
+- `PackChecks::any_date`, to use a rule pack without a pay date in tests.
 
 ### Changed
+
+- **Breaking.** `==`, `!=` and `in` between values of different kinds (other than `null`) are type errors. Before,
+  `grade == 3` with `grade` sent as `"3"` was quietly false and dropped the component it guarded.
+- **Breaking.** With `negative_net: "zero"`, a structure whose formulas or conditions read a deduction (by name
+  or through `total` of a tag holding one) is refused. Deductions are cut after the formulas run, so taxable pay
+  could subtract a pension contribution that was never taken, under-withholding tax.
+- **Breaking.** `PackChecks` refuses every rule pack until a pay date is given with `on`, so a table no longer
+  in force cannot be used by forgetting the date.
+- **Breaking.** `prorate(amount, part, whole)` refuses a `part` below zero or above `whole`.
 
 - `Compiled::run_all` and `for_each` refuse an `employee_id` seen earlier in the same call (an
   `EngineError::Input`), even when the first one failed, and every run refuses an empty `employee_id`. Before,

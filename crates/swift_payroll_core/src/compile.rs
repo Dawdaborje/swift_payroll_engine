@@ -73,6 +73,18 @@ pub enum Warning {
     UnusedInput(String),
     /// A constant no formula or condition reads.
     UnusedConstant(String),
+    /// Amounts are rounded to a number of decimal places the currency does not have (yen to 2 places,
+    /// dinars to 2 instead of 3). `component` is `None` for the structure's own rounding.
+    CurrencyDigits {
+        /// The structure's currency.
+        currency: String,
+        /// The component with its own rounding, or `None` for the structure's.
+        component: Option<String>,
+        /// The decimal places the rounding keeps.
+        digits: u32,
+        /// The decimal places the currency has.
+        minor_units: u32,
+    },
 }
 
 impl fmt::Display for Warning {
@@ -80,6 +92,10 @@ impl fmt::Display for Warning {
         match self {
             Warning::UnusedInput(name) => write!(f, "the input `{name}` is declared but nothing reads it"),
             Warning::UnusedConstant(name) => write!(f, "the constant `{name}` is declared but nothing reads it"),
+            Warning::CurrencyDigits { currency, component, digits, minor_units } => {
+                let what = component.as_ref().map_or("amounts".to_string(), |c| format!("`{c}`"));
+                write!(f, "{what} are rounded to {digits} decimal places, but {currency} has {minor_units}")
+            }
         }
     }
 }
@@ -127,6 +143,24 @@ fn is_name(id: &str) -> bool {
 }
 
 const RESERVED: &[&str] = &["true", "false", "null", "in"];
+
+/// The decimal places of the ISO 4217 currencies that do not have two.
+fn minor_units(currency: &str) -> Option<u32> {
+    const NONE: &[&str] = &["BIF", "CLP", "DJF", "GNF", "ISK", "JPY", "KMF", "KRW", "PYG", "RWF", "UGX", "UYI", "VND", "VUV", "XAF", "XOF", "XPF"];
+    const THREE: &[&str] = &["BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND"];
+    const FOUR: &[&str] = &["CLF", "UYW"];
+    let code = currency.trim().to_ascii_uppercase();
+    let has = |list: &[&str]| list.contains(&code.as_str());
+    if has(NONE) {
+        Some(0)
+    } else if has(THREE) {
+        Some(3)
+    } else if has(FOUR) {
+        Some(4)
+    } else {
+        None
+    }
+}
 
 /// Whether a value has an input's type (numbers given as decimal text count as numbers).
 pub(crate) fn typed(value: Value, input_type: InputType) -> Result<Value, String> {
@@ -314,6 +348,32 @@ impl Compiled {
             needs_tags[index].dedup();
         }
 
+        // Under `negative_net: zero` deductions are cut after every formula has run, so a formula that read a
+        // deduction would have used an amount that was never taken (taxable pay less a pension that was not
+        // paid in, an employer match on it): that would be wrong pay without an error, so it is refused.
+        if structure.negative_net == crate::NegativeNet::Zero {
+            let is_deduction = |i: usize| items[i].component.kind == crate::Kind::Deduction;
+            for (index, item) in items.iter().enumerate() {
+                let id = item.component.id.as_str();
+                let read = needs_items[index].iter().copied().find(|&other| is_deduction(other)).map(|other| format!("`{}`", items[other].component.id));
+                let totalled = || {
+                    needs_tags[index].iter().find(|&&tag| members[tag].iter().any(|&m| is_deduction(m))).map(|&tag| {
+                        let name = tag_names.iter().find(|(_, &t)| t == tag).map(|(n, _)| n.as_str()).unwrap_or_default();
+                        format!("total(\"{name}\"), which holds deductions")
+                    })
+                };
+                if let Some(what) = read.or_else(totalled) {
+                    return Err(bad_in(
+                        id,
+                        format!(
+                            "`{id}` reads {what}, but with negative_net `zero` a deduction may be cut after it is read; \
+                             compute from the inputs and earnings instead, or use negative_net `error`"
+                        ),
+                    ));
+                }
+            }
+        }
+
         // The lowest-numbered component whose needs are done goes next, so the order stays the written one
         // when it can (a min-heap of the components that are ready).
         let mut waiting: Vec<usize> = (0..items.len()).map(|i| needs_items[i].len() + needs_tags[i].len()).collect();
@@ -362,6 +422,20 @@ impl Compiled {
         let mut warnings = Vec::new();
         warnings.extend(structure.inputs.iter().filter(|s| !read.contains(&s.name)).map(|s| Warning::UnusedInput(s.name.clone())));
         warnings.extend(structure.constants.keys().filter(|name| !read.contains(*name)).map(|name| Warning::UnusedConstant(name.clone())));
+        if let Some(minor) = minor_units(&structure.currency) {
+            let wrong = |component: Option<String>, rounding: Rounding| {
+                (rounding.digits() != minor).then(|| Warning::CurrencyDigits {
+                    currency: structure.currency.clone(),
+                    component,
+                    digits: rounding.digits(),
+                    minor_units: minor,
+                })
+            };
+            warnings.extend(wrong(None, structure.rounding));
+            // Working figures (`info`) may keep more places; amounts paid or charged may not.
+            let paid = items.iter().filter(|i| i.component.kind != crate::Kind::Info);
+            warnings.extend(paid.filter_map(|i| i.component.round.and_then(|r| wrong(Some(i.component.id.clone()), r))));
+        }
 
         Ok(Compiled {
             structure: structure.clone(),

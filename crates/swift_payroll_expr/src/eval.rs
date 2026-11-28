@@ -211,6 +211,20 @@ fn binary(op: Op, a: Cow<'_, Value>, b: Cow<'_, Value>, at: usize, precision: Pr
     if let (Num(x), Num(y)) = (&*a, &*b) {
         return numbers(op, *x, *y, precision).map_err(|e| placed(e, at));
     }
+    // `"3" == 3` is false in most languages; in payroll it silently drops a component paid by condition,
+    // so comparing values of different kinds (other than with `null`) is an error, as `<` already is.
+    let mismatched = |x: &Value, y: &Value| !matches!(x, Null) && !matches!(y, Null) && std::mem::discriminant(x) != std::mem::discriminant(y);
+    let refuse =
+        |x: &Value, y: &Value| Err(Error::at(ErrorKind::Type, format!("cannot use `{}` on a {} and a {}", symbol(op), x.type_name(), y.type_name()), at));
+    match (op, &*a, &*b) {
+        (Op::Eq | Op::Ne, x, y) if mismatched(x, y) => return refuse(x, y),
+        (Op::In, x, List(items)) => {
+            if let Some(item) = items.iter().find(|item| mismatched(x, item)) {
+                return Err(Error::at(ErrorKind::Type, format!("cannot look for a {} in a list holding a {}", x.type_name(), item.type_name()), at));
+            }
+        }
+        _ => {}
+    }
     match (op, a.into_owned(), b.into_owned()) {
         (Op::Add, Str(x), Str(y)) => Ok(Str(x + &y)),
         (Op::Add, List(mut x), List(y)) => {

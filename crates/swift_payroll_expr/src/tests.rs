@@ -61,6 +61,21 @@ fn values_lists_maps_and_members() -> Test {
 }
 
 #[test]
+fn comparing_different_kinds_is_an_error_not_false() -> Test {
+    // A grade sent as text must not quietly fail `grade == 3` and drop a component.
+    let grade = [("grade", Value::Str("3".into()))];
+    assert_eq!(run("grade == 3", &grade).unwrap_err().kind, ErrorKind::Type);
+    assert_eq!(run("grade != 3", &grade).unwrap_err().kind, ErrorKind::Type);
+    assert_eq!(run("grade in [3, 4]", &grade).unwrap_err().kind, ErrorKind::Type);
+    assert_eq!(run("true == 'true'", &[]).unwrap_err().kind, ErrorKind::Type);
+    // The same kinds compare as before, and `null` compares with anything.
+    assert_eq!(run("grade == '3' && 3.0 == 3 && 'a' != 'b'", &grade)?, Value::Bool(true));
+    assert_eq!(run("grade == null || null == 3 || 5 in [1, null]", &grade)?, Value::Bool(false));
+    assert_eq!(run("'3' in ['3', '4']", &[])?, Value::Bool(true));
+    Ok(())
+}
+
+#[test]
 fn function_call_constraints_check_arity_and_literal_string_arguments() -> Test {
     assert!(compile("total(\"earning\")")?.calls_match_literals("total", 1, &[0]));
     assert!(!compile("total(tag)")?.calls_match_literals("total", 1, &[0]));
@@ -95,6 +110,9 @@ fn rounding_functions() -> Test {
     assert_eq!(run("pct(2500, 5)", &[])?, num("125")?);
     assert_eq!(run("prorate(3000, 10, 30)", &[])?, num("1000")?);
     assert!(run("prorate(1, 1, 0)", &[]).is_err());
+    assert_eq!(run("prorate(3000, 30, 30) + prorate(3000, 0, 30)", &[])?, num("3000")?);
+    assert_eq!(run("prorate(3000, 31, 30)", &[]).unwrap_err().kind, ErrorKind::InvalidArgument, "more than the whole period");
+    assert_eq!(run("prorate(3000, -1, 30)", &[]).unwrap_err().kind, ErrorKind::InvalidArgument);
     assert_eq!(run("between(5, 5, 10)", &[])?, Value::Bool(true));
     Ok(())
 }

@@ -71,6 +71,7 @@ rather than being ignored.
 | `id`, `version`, `currency` | Identify the structure; the version and currency are copied onto each payslip. |
 | `rounding` | Defaults to `{ "digits": 2, "mode": "half_up" }`. `digits` can be 0 through 8. Modes: `half_up` (ties away from zero), `half_even` (ties to even), `down` (towards zero), and `up` (away from zero). |
 | `precision` | `round` (default) rounds a result that needs more than 28 digits, such as `1 / 3`, far below a cent; `exact` makes such a result an error. In both modes a product or quotient of non-zero numbers that would round to zero is an error. |
+| `currency` | Copied onto each payslip. For a currency without two decimal places (JPY, KRW, … with none; BHD, KWD, … with three), a rounding to another number of places is a compile warning. |
 | `negative_net` | `error` (default) rejects negative net pay; `zero` holds net at 0, taking deductions in `priority` order and reporting what could not be taken as `shortfall`; `allow` returns negative net pay. |
 | `inputs` | For example, `[{ "name": "base_salary", "type": "number" }, { "name": "transport", "default": 0 }]`. See below. |
 | `constants` | JSON values such as tables and rates that formulas read by name: `{ "paye_table": [[288000, 0], [null, 0.2]] }`. |
@@ -118,12 +119,22 @@ whatever their priority. The payslip's `deductions` is what was actually taken, 
 sum of the lines' shortfalls, and `gross - deductions = net` still holds. If gross pay itself is negative, no cut
 of deductions can bring net to zero and the person's calculation is an error.
 
+Because deductions are cut only after every formula has run, a structure with `zero` may not read a deduction:
+no formula or condition may name a deduction or total a tag that holds one. Otherwise taxable pay would subtract
+a pension contribution that was never taken (and tax would be under-withheld), or an employer match would be paid
+on it. Such a structure is refused when it is compiled; work the figure out from inputs and earnings, or use
+`error` and let the host decide what to take.
+
 ## Expressions
 
 The language supports numeric and string literals, `true`/`false`/`null`, lists (`[1, 2]`), maps with string
 keys (`{'a': 1}`), names, member access (`a.b`), indexing (`a[i]`), function calls, parentheses, unary `!` and
 `-`, arithmetic `* / % + -`, comparisons `< <= > >= == !=`, membership `in`, boolean `&&` and `||`, conditional
 expressions (`condition ? yes : no`), and `//` comments. There are no loop or assignment expressions.
+
+`==`, `!=` and `in` between values of different kinds are errors, as `<` is: `"3" == 3` does not quietly give
+`false` (which would drop a component paid by condition when an input arrives as text). `null` compares with
+anything. Declaring an input's `type` catches the same mistake earlier, when the person is read.
 
 Built-in functions:
 
@@ -135,7 +146,7 @@ Built-in functions:
 | `round_even(x[, digits])` | Round ties to even; `digits` has the same range and default as `round`. |
 | `clamp(x, low, high)`, `between(x, low, high)` | Clamp to inclusive bounds, or check whether `x` is within them. `clamp` errors if `low > high`. |
 | `pct(x, p)` | Return `p` percent of `x`; for example, `pct(1000, 5)` is 50. |
-| `prorate(amount, part, whole)` | Return `amount * part / whole`; `whole` must be above zero. |
+| `prorate(amount, part, whole)` | Return `amount * part / whole`; `whole` must be above zero and `part` from 0 to `whole` (31 days of a 30-day period is an error, not extra pay). |
 | `bracket(x, table)` | Progressive bands. See the rules below. |
 | `rate_at(x, table)` | Return the rate for the band containing `x`; an upper bound belongs to its band. |
 | `sum(list)` | Sum a list of numbers. Multiple number arguments are also accepted. |
@@ -179,8 +190,9 @@ A rule pack consists of a `.cel` expression and a matching `.json` description i
 
 The expression must not be empty and may only read declared inputs and constants. `RulePack::as_component` turns
 a pack into a component and the constants it needs, after `PackChecks`: an unverified pack is refused unless
-explicitly allowed (for tests and demonstrations only), the pack's currency must match the structure's, and, when
-a pay date is given, the pack must be in force on it.
+explicitly allowed (for tests and demonstrations only), the pack's currency must match the structure's, and the
+pack must be in force on the pay date given with `PackChecks::on`. Without a pay date every pack is refused
+(`NotInForce`), so last year's table never runs unseen; `PackChecks::any_date` skips the date for tests only.
 
 `cargo run -- check-rules <dir>` checks packs under a directory; a description with no tests is reported as a
 failure, while a `.cel` file without a description is reported as pending.

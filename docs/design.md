@@ -19,6 +19,16 @@ structures before calculating a person's pay.
 
 * Year-to-date and cumulative tax: the caller passes year-to-date figures as inputs.
 * Proration by days: use `prorate(amount, days_worked, days_in_period)` with inputs from attendance and leave.
+* A fingerprint of the structure on each payslip: `structure_version` is whatever the author wrote, so an edit
+  without a new version looks like the old one. A host that must prove which rules paid someone should store a
+  hash of the structure's JSON with each run.
+* Paying someone twice across runs: `run_all` and `for_each` refuse a repeated `employee_id` within one call; the
+  host keeps track of who was paid in which period.
+* A net pay floor above zero (protected earnings, garnishment limits such as 25% of disposable pay): write the
+  limit into the deduction's formula, for example `min(order_amount, pct(disposable, 25))`, from earnings and
+  inputs.
+* Grossing up (the gross that leaves a wanted net): the language has no loops, so a gross-up through tax bands
+  is solved by the host; a flat rate can be written directly (`net / (1 - rate)`).
 * Several currencies in one structure.
 * Retroactive recalculation and arrears: a new run with corrected inputs; comparing runs is the caller's job.
 * Rhai (or any other `f64` language).

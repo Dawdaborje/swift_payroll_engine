@@ -435,7 +435,7 @@ fn pct_and_prorate_match_the_exact_oracle() {
         let (a, part, whole) = (amount(&mut rng), amount(&mut rng), amount(&mut rng));
         let source = format!("prorate({}, {}, {})", literal(a), literal(part), literal(whole));
         let exact = run(&source, &env, Precision::Exact);
-        if whole <= Decimal::ZERO {
+        if whole <= Decimal::ZERO || part < Decimal::ZERO || part > whole {
             assert_eq!(exact.map_err(|e| e.kind), Err(ErrorKind::InvalidArgument), "{source}");
             continue;
         }

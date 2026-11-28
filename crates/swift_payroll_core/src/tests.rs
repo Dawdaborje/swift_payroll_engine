@@ -323,7 +323,7 @@ fn a_rule_pack_is_refused_when_it_cannot_work() -> Test {
 fn a_pack_becomes_a_component_of_a_structure() -> Test {
     let pack = RulePack::parse(PACK, EXPRESSION)?;
     let arguments = BTreeMap::from([("taxable".to_string(), "taxable".to_string()), ("periods_per_year".to_string(), "periods_per_year".to_string())]);
-    let (constants, paye) = pack.as_component("paye", "Income tax", Kind::Deduction, &arguments, &PackChecks::new().allow_unverified())?;
+    let (constants, paye) = pack.as_component("paye", "Income tax", Kind::Deduction, &arguments, &PackChecks::new().allow_unverified().any_date())?;
     let mut structure = demo()?;
     structure.constants.extend(constants);
     structure.components.retain(|c| c.id != "paye");
@@ -369,6 +369,47 @@ fn inputs_and_constants_nothing_reads_are_reported() -> Test {
     }))?;
     let compiled = Compiled::new(&structure)?;
     assert_eq!(compiled.warnings(), [Warning::UnusedInput("is_member".into()), Warning::UnusedConstant("unused_rate".into())]);
+    Ok(())
+}
+
+#[test]
+fn rounding_to_places_the_currency_does_not_have_is_reported() -> Test {
+    let structure = |currency: &str| -> Result<Structure, serde_json::Error> {
+        serde_json::from_value(json!({
+            "id": "s", "version": "1", "currency": currency, "inputs": [{ "name": "base" }],
+            "components": [
+                { "id": "pay", "label": "Pay", "kind": "earning", "input": "base" },
+                { "id": "rate", "label": "Hourly rate", "kind": "info", "formula": "pay / 160", "round": { "digits": 4 } },
+                { "id": "fee", "label": "Fee", "kind": "deduction", "amount": 1, "round": { "digits": 0 } }
+            ]
+        }))
+    };
+    let jpy = Compiled::new(&structure("JPY")?)?;
+    assert_eq!(jpy.warnings(), [Warning::CurrencyDigits { currency: "JPY".into(), component: None, digits: 2, minor_units: 0 }]);
+    let kwd = Compiled::new(&structure("kwd")?)?;
+    assert_eq!(kwd.warnings().len(), 2, "the structure's 2 places and `fee`'s 0, not the working figure: {:?}", kwd.warnings());
+    assert!(Compiled::new(&structure("USD")?)?.warnings().is_empty());
+    Ok(())
+}
+
+#[test]
+fn reading_a_deduction_that_may_be_cut_is_refused() -> Test {
+    // Under `zero`, deductions are cut after the formulas run: taxable pay less a pension that was never
+    // taken would under-withhold tax, so a structure that reads a deduction is refused before any payroll.
+    let mut structure = demo()?;
+    structure.negative_net = crate::NegativeNet::Zero;
+    let error = Compiled::new(&structure).unwrap_err().to_string();
+    assert!(error.contains("taxable") && error.contains("total(\"pre_tax\")"), "{error}");
+
+    structure.components.retain(|c| !["taxable", "paye"].contains(&c.id.as_str()));
+    structure.components.push(crate::Component::formula("match", "Employer match", crate::Kind::Employer, "social"));
+    let error = Compiled::new(&structure).unwrap_err().to_string();
+    assert!(error.contains("`match` reads `social`"), "{error}");
+
+    // Reading earnings and inputs is fine, and the same structure under `error` is accepted.
+    structure.components.pop();
+    assert!(Compiled::new(&structure).is_ok());
+    assert!(Compiled::new(&demo()?).is_ok());
     Ok(())
 }
 
@@ -525,7 +566,12 @@ fn pack_use_is_checked_for_verification_currency_and_date() -> Test {
     let checks = Checks::for_structure(&demo()?).allow_unverified().on("2025-06-30");
     assert!(pack.as_component("paye", "Income tax", Kind::Deduction, &arguments, &checks).is_ok());
     let verified = RulePack::parse(&PACK.replace("\"verified\": false", "\"verified\": true"), EXPRESSION)?;
-    assert!(verified.as_component("paye", "Income tax", Kind::Deduction, &arguments, &Checks::new()).is_ok());
+    // Without a pay date even a verified pack is refused: a table out of force must never run unseen.
+    assert_eq!(
+        verified.as_component("paye", "Income tax", Kind::Deduction, &arguments, &Checks::new()).map(|_| ()).unwrap_err().kind,
+        RuleErrorKind::NotInForce
+    );
+    assert!(verified.as_component("paye", "Income tax", Kind::Deduction, &arguments, &Checks::new().on("2025-06-30")).is_ok());
     let bad_id = RulePack::parse(&PACK.replace("xx.paye.demo", "XX Paye"), EXPRESSION).unwrap_err();
     assert_eq!(bad_id.kind, RuleErrorKind::Description);
     Ok(())
